@@ -30,7 +30,7 @@ jobs:
       # a stray drift between pyproject.toml and poetry.lock) busts the
       # cache instead of silently reusing a stale venv.
       - name: Cache Poetry venv
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: apps/ai-service/.venv
           key: ai-service-poetry-${{ runner.os }}-${{ hashFiles('apps/ai-service/poetry.lock') }}
