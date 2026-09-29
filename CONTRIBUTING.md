@@ -54,6 +54,31 @@ If QA finds the ticket doesn't meet its own acceptance criteria, it goes back to
 
 - Branch: `type/<issue>-<short-slug>`, for example `feat/142-usage-cap`.
 - PR title: a conventional commit (`feat(placement): start placement at A1`). It becomes the commit on `main`, so the `PR title` job in CI checks it against the allowed types and scopes (listed in `.github/workflows/ci.yml`), and a bad title fails the CI gate. Titles are re-checked whenever they are edited. Commit messages on your branch aren't checked, since squashing discards them.
+- The title mirrors the ticket, so a PR and its issue are recognisable at a glance and `main`'s history reads like the board. Take the ticket title, turn its `[area]` prefix into the scope and lowercase the first letter. Task `[infra] Stop the failing Deploy runs until staging exists` becomes `ci(infra): stop the failing Deploy runs until staging exists`. Leave the issue number out of the title: the branch and the PR body carry it, and GitHub appends the PR number on merge. Every board Area maps to a scope:
+
+  | Area | Scope |
+  |---|---|
+  | frontend | `frontend` |
+  | gateway | `gateway` |
+  | ai-service | `ai-service` |
+  | worker | `worker` |
+  | infra | `infra` |
+  | content | `content` |
+  | calibration | `calibration` |
+  | payments | `billing` |
+  | legal | `legal` |
+
+- The type follows the ticket's type on the board. `feat` and `fix` drive release notes and version bumps, so they belong only to the ticket types that mean the same thing:
+
+  | Ticket type | Commit type |
+  |---|---|
+  | Feature | `feat` |
+  | Bug | `fix` |
+  | Task, Spike, Decision | whichever of `chore`, `ci`, `build`, `docs`, `refactor`, `test`, `perf`, `style` fits; never `feat` or `fix` |
+  | Epic | no PR of its own; its sub-issues get the PRs |
+
+  Dependabot PRs have no ticket and keep `chore(deps)`.
+- PR description: the `Type of Change` line repeats the PR title exactly.
 - PR body: `Refs #<issue>`, never `Closes #<issue>`. A closing keyword would close the issue at merge and skip QA.
 - One ticket per PR, kept small.
 

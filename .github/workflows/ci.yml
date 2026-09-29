@@ -126,6 +126,7 @@ jobs:
             deps
             lessons
             content
+            legal
             entitlements
             analytics
             reviewer

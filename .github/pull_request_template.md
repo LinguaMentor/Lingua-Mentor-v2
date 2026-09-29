@@ -1,8 +1,12 @@
+<!-- PR title mirrors the ticket: Task [infra] Stop the failing Deploy runs until staging exists → ci(infra): stop the failing Deploy runs until staging exists. Feature → feat, Bug → fix, other types never feat/fix. See CONTRIBUTING.md. -->
 ## Summary
 One or two sentences: what does this PR do and why.
 
 ## Related issue
 Refs #  <!-- Not Fixes/Closes: QA closes the issue after testing on staging -->
+
+## Type of Change
+- `<type>(<scope>): <short summary>`  <!-- Same as the PR title; the type follows the ticket's type. -->
 
 ## Changes
 - Bullet list of concrete changes made
