@@ -21,10 +21,34 @@ def evaluate_payload() -> dict:
         "overall_band_score": "6.50",
         "cefr_level": "B2",
         "categories": [
-            {"key": "task_response", "name": "Task Response", "score": "6.50", "weight": "0.250", "feedback": "ok"},
-            {"key": "coherence_cohesion", "name": "Coherence & Cohesion", "score": "6.00", "weight": "0.250", "feedback": "ok"},
-            {"key": "lexical_resource", "name": "Lexical Resource", "score": "7.00", "weight": "0.250", "feedback": "ok"},
-            {"key": "grammatical_range", "name": "Grammatical Range & Accuracy", "score": "6.50", "weight": "0.250", "feedback": "ok"},
+            {
+                "key": "task_response",
+                "name": "Task Response",
+                "score": "6.50",
+                "weight": "0.250",
+                "feedback": "ok",
+            },
+            {
+                "key": "coherence_cohesion",
+                "name": "Coherence & Cohesion",
+                "score": "6.00",
+                "weight": "0.250",
+                "feedback": "ok",
+            },
+            {
+                "key": "lexical_resource",
+                "name": "Lexical Resource",
+                "score": "7.00",
+                "weight": "0.250",
+                "feedback": "ok",
+            },
+            {
+                "key": "grammatical_range",
+                "name": "Grammatical Range & Accuracy",
+                "score": "6.50",
+                "weight": "0.250",
+                "feedback": "ok",
+            },
         ],
         "grammar_corrections": [{"original": "a", "correction": "b", "explanation": "c"}],
         "vocabulary_suggestions": [],
@@ -79,9 +103,7 @@ async def test_happy_path_scores_session_with_decimal_round_trip(
     assert json.loads(row["grammar_corrections"])[0]["correction"] == "b"
 
 
-async def test_terminal_400_marks_failed_without_raising(
-    db_conn, fake_pool, writing_session_id
-):
+async def test_terminal_400_marks_failed_without_raising(db_conn, fake_pool, writing_session_id):
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
             400, json={"error": {"code": "UNKNOWN_EXAM", "message": "nope", "field": "exam_type"}}
@@ -99,9 +121,7 @@ async def test_terminal_400_marks_failed_without_raising(
     assert status == "failed"
 
 
-async def test_retryable_502_resets_to_pending_and_raises(
-    db_conn, fake_pool, writing_session_id
-):
+async def test_retryable_502_resets_to_pending_and_raises(db_conn, fake_pool, writing_session_id):
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(502, json={"error": {"code": "EVALUATION_FAILED", "message": "burp"}})
 

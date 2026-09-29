@@ -23,6 +23,7 @@ def _fence(label: str, text: str) -> str:
     a fence the writer can close is not a fence."""
     return f"<<<{label}_START>>>\n{_MARKER_RE.sub('', text)}\n<<<{label}_END>>>"
 
+
 _SYSTEM_LAYER = (
     "You are LinguaMentor's writing evaluation engine: a calibrated, "
     "rubric-strict examiner for high-stakes language exams. You evaluate "
@@ -78,8 +79,7 @@ def _rubric_layer(config: ExamConfig) -> str:
     blocks = []
     for category in config.writing.rubric_categories:
         descriptors = "\n".join(
-            f"  Band {band}: {text}"
-            for band, text in sorted(category.band_descriptors.items())
+            f"  Band {band}: {text}" for band, text in sorted(category.band_descriptors.items())
         )
         blocks.append(
             f"[{category.key}] {category.name} (weight {category.weight})\n"
@@ -96,9 +96,8 @@ def _user_context_layer(target_band: str | None, cefr_writing: str | None) -> st
         parts.append(f"Their last assessed CEFR writing level was {cefr_writing}.")
     if not parts:
         return None
-    return (
-        "Learner context (for feedback tone only — this must NOT influence "
-        "scores): " + " ".join(parts)
+    return "Learner context (for feedback tone only — this must NOT influence scores): " + " ".join(
+        parts
     )
 
 

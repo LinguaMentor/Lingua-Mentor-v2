@@ -1,7 +1,11 @@
 import { decodeJwt } from "jose";
 import { describe, expect, it } from "vitest";
 
-import { REFRESH_COOKIE_NAME, REFRESH_COOKIE_PATH, REFRESH_TOKEN_TTL_SECONDS } from "../src/config/constants";
+import {
+	REFRESH_COOKIE_NAME,
+	REFRESH_COOKIE_PATH,
+	REFRESH_TOKEN_TTL_SECONDS,
+} from "../src/config/constants";
 import { buildTestApp, makeFakeDb } from "./helpers";
 
 const NEW_USER_ID = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeffff0000";
@@ -40,7 +44,11 @@ describe("POST /api/v1/auth/register", () => {
 		const db = dbWithInsertSuccess();
 		const { app, redis } = await buildTestApp({ db });
 
-		const res = await app.inject({ method: "POST", url: "/api/v1/auth/register", payload: VALID_BODY });
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/auth/register",
+			payload: VALID_BODY,
+		});
 
 		expect(res.statusCode).toBe(201);
 		const body = res.json();
@@ -73,7 +81,11 @@ describe("POST /api/v1/auth/register", () => {
 	it("sets the refresh cookie httpOnly, sameSite=Strict, scoped to /api/v1/auth", async () => {
 		const { app } = await buildTestApp({ db: dbWithInsertSuccess() });
 
-		const res = await app.inject({ method: "POST", url: "/api/v1/auth/register", payload: VALID_BODY });
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/auth/register",
+			payload: VALID_BODY,
+		});
 
 		const cookie = res.cookies.find((c) => c.name === REFRESH_COOKIE_NAME);
 		expect(cookie).toBeDefined();
@@ -114,7 +126,11 @@ describe("POST /api/v1/auth/register", () => {
 	it("issues an access token with a 15-minute lifetime and the right claims", async () => {
 		const { app } = await buildTestApp({ db: dbWithInsertSuccess() });
 
-		const res = await app.inject({ method: "POST", url: "/api/v1/auth/register", payload: VALID_BODY });
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/auth/register",
+			payload: VALID_BODY,
+		});
 		const { access_token } = res.json();
 
 		const claims = decodeJwt(access_token);
@@ -138,7 +154,11 @@ describe("POST /api/v1/auth/register", () => {
 		]);
 		const { app } = await buildTestApp({ db });
 
-		const res = await app.inject({ method: "POST", url: "/api/v1/auth/register", payload: VALID_BODY });
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/auth/register",
+			payload: VALID_BODY,
+		});
 
 		expect(res.statusCode).toBe(409);
 		expect(res.json()).toEqual({

@@ -87,6 +87,7 @@ If QA finds the ticket doesn't meet its own acceptance criteria, it goes back to
 - PR description: the `Type of Change` line repeats the PR title exactly.
 - PR body: `Refs #<issue>`, never `Closes #<issue>`. A closing keyword would close the issue at merge and skip QA.
 - One ticket per PR, kept small.
+- Formatting: Prettier for TypeScript, JavaScript, JSON and CSS (`pnpm format`), `ruff format` for Python. The pre-commit hook formats staged files, and CI fails on anything unformatted.
 
 ## Environments and releases
 

@@ -49,7 +49,10 @@ export async function authenticate(request: FastifyRequest): Promise<void> {
 
 /** Route guard for role-restricted endpoints — must run after `authenticate`. */
 export function requireRole(...roles: string[]) {
-	return async function requireRoleHook(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
+	return async function requireRoleHook(
+		request: FastifyRequest,
+		_reply: FastifyReply,
+	): Promise<void> {
 		if (!request.user || !roles.includes(request.user.role)) {
 			throw new AppError(403, "FORBIDDEN", "you do not have permission to perform this action");
 		}

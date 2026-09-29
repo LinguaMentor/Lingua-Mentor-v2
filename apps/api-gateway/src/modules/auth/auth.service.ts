@@ -190,7 +190,11 @@ export async function refreshSession(
 	// the token, so a replayed cookie finds nothing and can't mint a session.
 	const storedUserId = await deps.redis.getdel(`${REFRESH_KEY_PREFIX}${claims.jti}`);
 	if (!storedUserId || storedUserId !== claims.sub) {
-		throw new AppError(401, "INVALID_REFRESH_TOKEN", "refresh token has already been used or revoked");
+		throw new AppError(
+			401,
+			"INVALID_REFRESH_TOKEN",
+			"refresh token has already been used or revoked",
+		);
 	}
 
 	// Opening the app refreshes rather than logs in, so this is the only place

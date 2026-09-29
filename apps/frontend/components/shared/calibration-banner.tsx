@@ -38,8 +38,8 @@ export function CalibrationBanner({
 				<AlertDescription>
 					{hasFigures ? (
 						<>
-							This score was calibrated against {sampleCount.toLocaleString()} human-graded
-							essays. AI-to-human correlation:{" "}
+							This score was calibrated against {sampleCount.toLocaleString()} human-graded essays.
+							AI-to-human correlation:{" "}
 							<span className="font-medium">{formatCorrelation(correlation)}</span>.
 						</>
 					) : (

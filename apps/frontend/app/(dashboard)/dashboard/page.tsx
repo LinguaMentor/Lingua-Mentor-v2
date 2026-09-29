@@ -36,8 +36,8 @@ export default function DashboardPage() {
 					<Alert variant="info">
 						<AlertTitle>Take your placement test</AlertTitle>
 						<AlertDescription>
-							Submit a short writing sample to initialize your 4D CEFR profile — it&apos;s the
-							first step before writing practice and exam simulation unlock.
+							Submit a short writing sample to initialize your 4D CEFR profile — it&apos;s the first
+							step before writing practice and exam simulation unlock.
 						</AlertDescription>
 						<Button asChild size="sm" className="mt-2">
 							<Link href="/placement">
@@ -52,14 +52,16 @@ export default function DashboardPage() {
 						<CardHeader>
 							<CardTitle>4D CEFR profile</CardTitle>
 							<CardDescription>
-								Speaking, Listening, Reading, and Writing tracked independently — a single
-								averaged level would hide exactly the gaps that matter.
+								Speaking, Listening, Reading, and Writing tracked independently — a single averaged
+								level would hide exactly the gaps that matter.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{profileQuery.isLoading && <Skeleton className="h-72 w-full" />}
 							{profileQuery.isError && (
-								<p className="text-sm text-destructive">Couldn&apos;t load your CEFR profile — try refreshing.</p>
+								<p className="text-sm text-destructive">
+									Couldn&apos;t load your CEFR profile — try refreshing.
+								</p>
 							)}
 							{profileQuery.data && <CefrRadar profile={profileQuery.data} />}
 						</CardContent>

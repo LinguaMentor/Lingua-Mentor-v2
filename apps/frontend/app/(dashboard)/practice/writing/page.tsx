@@ -101,7 +101,8 @@ export default function WritingPracticePage() {
 	}
 
 	const wordCount = countWords(essayText);
-	const canSubmit = promptText.trim().length > 0 && essayText.trim().length > 0 && !submit.isPending;
+	const canSubmit =
+		promptText.trim().length > 0 && essayText.trim().length > 0 && !submit.isPending;
 
 	return (
 		<div>

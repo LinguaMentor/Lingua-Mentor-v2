@@ -31,7 +31,11 @@ def _payload_with_diacritics() -> dict:
     # was diacritic mishandling in the pipeline, so we prove they survive.
     return {
         "categories": [
-            {"key": "task_response", "score": 6.5, "feedback": "Réponse claire, mais naïve — café."},
+            {
+                "key": "task_response",
+                "score": 6.5,
+                "feedback": "Réponse claire, mais naïve — café.",
+            },
             {"key": "coherence_cohesion", "score": 6.0, "feedback": "Progression logique."},
             {"key": "lexical_resource", "score": 7.0, "feedback": "Bon éventail lexical."},
             {"key": "grammatical_range_accuracy", "score": 6.0, "feedback": "Quelques erreurs."},

@@ -47,10 +47,30 @@ def _essay(essay_id, human_overall, categories, adversarial=False):
 
 
 HUMAN_CATS = [
-    {"task_response": "5.0", "coherence_cohesion": "5.0", "lexical_resource": "5.5", "grammatical_range_accuracy": "5.0"},
-    {"task_response": "6.0", "coherence_cohesion": "6.0", "lexical_resource": "6.5", "grammatical_range_accuracy": "6.0"},
-    {"task_response": "7.0", "coherence_cohesion": "7.0", "lexical_resource": "7.5", "grammatical_range_accuracy": "7.0"},
-    {"task_response": "8.0", "coherence_cohesion": "8.0", "lexical_resource": "8.0", "grammatical_range_accuracy": "8.0"},
+    {
+        "task_response": "5.0",
+        "coherence_cohesion": "5.0",
+        "lexical_resource": "5.5",
+        "grammatical_range_accuracy": "5.0",
+    },
+    {
+        "task_response": "6.0",
+        "coherence_cohesion": "6.0",
+        "lexical_resource": "6.5",
+        "grammatical_range_accuracy": "6.0",
+    },
+    {
+        "task_response": "7.0",
+        "coherence_cohesion": "7.0",
+        "lexical_resource": "7.5",
+        "grammatical_range_accuracy": "7.0",
+    },
+    {
+        "task_response": "8.0",
+        "coherence_cohesion": "8.0",
+        "lexical_resource": "8.0",
+        "grammatical_range_accuracy": "8.0",
+    },
 ]
 
 
@@ -91,7 +111,8 @@ async def test_divergent_essays_flagged_and_failures_recorded():
         [
             _payload(5.0, 5.0, 5.0, 5.0),
             _payload(8.0, 8.0, 8.0, 8.0),  # 2 bands above human → divergent
-            "{malformed", "{still malformed",  # fails after retry → recorded failure
+            "{malformed",
+            "{still malformed",  # fails after retry → recorded failure
         ]
     )
     scores, failures = await score_dataset(provider, essays, model="m", concurrency=1)
@@ -105,10 +126,22 @@ async def test_divergent_essays_flagged_and_failures_recorded():
 async def test_run_calibration_groups_by_exam_type(tmp_path):
     dataset = tmp_path / "essays.jsonl"
     records = [
-        {"essay_id": "a", "exam_type": "ielts_academic", "prompt_text": "p", "essay_text": "e",
-         "human_overall": "5.0", "human_categories": HUMAN_CATS[0]},
-        {"essay_id": "b", "exam_type": "ielts_academic", "prompt_text": "p", "essay_text": "e",
-         "human_overall": "7.0", "human_categories": HUMAN_CATS[2]},
+        {
+            "essay_id": "a",
+            "exam_type": "ielts_academic",
+            "prompt_text": "p",
+            "essay_text": "e",
+            "human_overall": "5.0",
+            "human_categories": HUMAN_CATS[0],
+        },
+        {
+            "essay_id": "b",
+            "exam_type": "ielts_academic",
+            "prompt_text": "p",
+            "essay_text": "e",
+            "human_overall": "7.0",
+            "human_categories": HUMAN_CATS[2],
+        },
     ]
     dataset.write_text("\n".join(json.dumps(r) for r in records))
     provider = FakeProvider([_payload(5.0, 5.0, 5.5, 5.0), _payload(7.0, 7.0, 7.5, 7.0)])

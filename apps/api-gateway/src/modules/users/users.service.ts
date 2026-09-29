@@ -102,10 +102,9 @@ export async function eraseAccount(db: DbClient, userId: string): Promise<boolea
 			`UPDATE writing_sessions SET prompt_text = '', essay_text = '' WHERE learner_profile_id = $1`,
 			[learnerProfileId],
 		);
-		await tx.query(
-			`UPDATE score_appeals SET appeal_reason = NULL WHERE learner_profile_id = $1`,
-			[learnerProfileId],
-		);
+		await tx.query(`UPDATE score_appeals SET appeal_reason = NULL WHERE learner_profile_id = $1`, [
+			learnerProfileId,
+		]);
 		await tx.query(
 			`UPDATE speaking_sessions SET transcript_text = NULL WHERE learner_profile_id = $1`,
 			[learnerProfileId],
@@ -117,10 +116,9 @@ export async function eraseAccount(db: DbClient, userId: string): Promise<boolea
 			 WHERE lesson_session_id IN (SELECT id FROM lesson_sessions WHERE learner_profile_id = $1)`,
 			[learnerProfileId],
 		);
-		await tx.query(
-			`UPDATE lesson_sessions SET topic = NULL WHERE learner_profile_id = $1`,
-			[learnerProfileId],
-		);
+		await tx.query(`UPDATE lesson_sessions SET topic = NULL WHERE learner_profile_id = $1`, [
+			learnerProfileId,
+		]);
 		return true;
 	});
 }

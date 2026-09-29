@@ -48,6 +48,7 @@ jobs:
       # this flag. The Dockerfile already installs the same way.
       - run: poetry install --no-root --sync
 
+      - run: poetry run ruff format --check .
       - run: poetry run ruff check .
       - run: poetry run mypy app
       - run: poetry run pytest -q

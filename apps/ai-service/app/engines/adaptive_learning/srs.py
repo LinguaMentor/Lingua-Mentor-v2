@@ -86,9 +86,7 @@ def compute_priority(
     skill_gap = 1.0 - state.score
     volatility = volatility_factor(recent_scores or [])
     priority = (
-        overdue * _OVERDUE_WEIGHT
-        + skill_gap * _SKILL_GAP_WEIGHT
-        + volatility * _VOLATILITY_WEIGHT
+        overdue * _OVERDUE_WEIGHT + skill_gap * _SKILL_GAP_WEIGHT + volatility * _VOLATILITY_WEIGHT
     )
     return DimensionPriority(
         dimension=state.dimension,

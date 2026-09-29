@@ -1,7 +1,12 @@
 import { SignJWT, importPKCS8 } from "jose";
 import { describe, expect, it } from "vitest";
 
-import { JWT_ISSUER, REFRESH_COOKIE_NAME, REFRESH_KEY_PREFIX, REFRESH_TOKEN_TTL_SECONDS } from "../src/config/constants";
+import {
+	JWT_ISSUER,
+	REFRESH_COOKIE_NAME,
+	REFRESH_KEY_PREFIX,
+	REFRESH_TOKEN_TTL_SECONDS,
+} from "../src/config/constants";
 import {
 	type FakeDb,
 	LEARNER_PROFILE_ID,
@@ -56,9 +61,12 @@ function dbWithUser(overrides: Record<string, unknown> = {}) {
 	]);
 }
 
-async function seedLiveRefreshToken(material: Awaited<ReturnType<typeof makeTestJwtMaterial>>, redis: {
-	setex(key: string, ttl: number, value: string): Promise<void>;
-}) {
+async function seedLiveRefreshToken(
+	material: Awaited<ReturnType<typeof makeTestJwtMaterial>>,
+	redis: {
+		setex(key: string, ttl: number, value: string): Promise<void>;
+	},
+) {
 	const { token, jti } = await material.jwt.signRefreshToken(USER_ID);
 	await redis.setex(`${REFRESH_KEY_PREFIX}${jti}`, REFRESH_TOKEN_TTL_SECONDS, USER_ID);
 	return token;
@@ -165,7 +173,10 @@ describe("POST /api/v1/auth/refresh", () => {
 	it("rejects an access token presented as the refresh cookie", async () => {
 		const material = await makeTestJwtMaterial();
 		const { app } = await buildTestApp({ db: dbWithUser(), jwt: material.jwt });
-		const accessToken = await signTestAccessToken(material.jwt, { sub: USER_ID, lpid: LEARNER_PROFILE_ID });
+		const accessToken = await signTestAccessToken(material.jwt, {
+			sub: USER_ID,
+			lpid: LEARNER_PROFILE_ID,
+		});
 
 		const res = await app.inject({
 			method: "POST",
@@ -194,7 +205,10 @@ describe("POST /api/v1/auth/refresh", () => {
 
 	it("rejects refresh for a deactivated account even with a live jti", async () => {
 		const material = await makeTestJwtMaterial();
-		const { app, redis } = await buildTestApp({ db: dbWithUser({ is_active: false }), jwt: material.jwt });
+		const { app, redis } = await buildTestApp({
+			db: dbWithUser({ is_active: false }),
+			jwt: material.jwt,
+		});
 		const token = await seedLiveRefreshToken(material, redis);
 
 		const res = await app.inject({

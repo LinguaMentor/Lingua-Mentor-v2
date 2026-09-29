@@ -42,9 +42,7 @@ describe("POST /api/v1/session/daily-diagnostic (PRD §35.3)", () => {
 
 		expect(res.statusCode).toBe(200);
 		expect(res.json().skill_targeted).toBe("grammar");
-		expect(aiService.calls).toEqual([
-			{ method: "generateDailySession", args: LEARNER_PROFILE_ID },
-		]);
+		expect(aiService.calls).toEqual([{ method: "generateDailySession", args: LEARNER_PROFILE_ID }]);
 	});
 
 	it("caches under the §33 key with a TTL that ends at midnight", async () => {

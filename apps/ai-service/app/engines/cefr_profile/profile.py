@@ -95,11 +95,13 @@ def profile_from_stored(
         writing=Dimension(cefr_writing, ASSESSED if cefr_writing else PENDING),
         reading=Dimension(cefr_reading, PROXY if cefr_reading else PENDING, _READING_PROXY),
         speaking=Dimension(
-            cefr_speaking, ASSESSED if cefr_speaking else PENDING,
+            cefr_speaking,
+            ASSESSED if cefr_speaking else PENDING,
             None if cefr_speaking else _VOICE_PENDING,
         ),
         listening=Dimension(
-            cefr_listening, PROXY if cefr_listening else PENDING,
+            cefr_listening,
+            PROXY if cefr_listening else PENDING,
             None if cefr_listening else _LISTENING_PENDING,
         ),
     )

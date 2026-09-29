@@ -40,7 +40,9 @@ def _provider(body: bytes, status: int = 200) -> GroqProvider:
         )
     )
     provider = GroqProvider("test-key")
-    provider._client = httpx.AsyncClient(base_url="https://api.groq.com/openai/v1", transport=transport)
+    provider._client = httpx.AsyncClient(
+        base_url="https://api.groq.com/openai/v1", transport=transport
+    )
     return provider
 
 

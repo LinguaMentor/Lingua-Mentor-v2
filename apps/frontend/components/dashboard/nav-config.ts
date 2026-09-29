@@ -1,4 +1,12 @@
-import { LayoutDashboard, Mic, NotebookPen, Settings, Target, Timer, type LucideIcon } from "lucide-react";
+import {
+	LayoutDashboard,
+	Mic,
+	NotebookPen,
+	Settings,
+	Target,
+	Timer,
+	type LucideIcon,
+} from "lucide-react";
 
 export interface NavItem {
 	href: string;

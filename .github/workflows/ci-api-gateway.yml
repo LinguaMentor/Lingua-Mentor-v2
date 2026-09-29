@@ -28,6 +28,9 @@ jobs:
       # dependency api-gateway needs built before it can typecheck/build.
       - run: pnpm install --frozen-lockfile --filter api-gateway...
 
+      # packages/ is checked here only, so frontend's job doesn't repeat it.
+      - run: pnpm exec prettier --check apps/api-gateway packages
+
       - run: pnpm --filter @lingumentor/shared-schemas build
 
       - run: pnpm --filter api-gateway lint

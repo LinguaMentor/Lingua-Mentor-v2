@@ -39,9 +39,7 @@ class CalibrationBaseline(Base):
     inter_rater_kappa: Mapped[float | None] = mapped_column(Numeric(5, 4))
     calibration_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     signed_off_by: Mapped[str | None] = mapped_column(String(255))
-    displayed_on_reports: Mapped[bool] = mapped_column(
-        Boolean, server_default=text("true")
-    )
+    displayed_on_reports: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()")
     )

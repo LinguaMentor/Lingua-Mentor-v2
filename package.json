@@ -10,6 +10,8 @@
     "dev:worker": "cd apps/worker && .venv/bin/python -m app.main",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
+    "format": "prettier --write apps/api-gateway apps/frontend packages",
+    "format:check": "prettier --check apps/api-gateway apps/frontend packages",
     "test": "pnpm -r test",
     "prepare": "husky"
   },
@@ -19,6 +21,7 @@
   "packageManager": "pnpm@9.0.0",
   "devDependencies": {
     "husky": "^9.1.7",
-    "lint-staged": "^17.5.1"
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.9"
   }
 }

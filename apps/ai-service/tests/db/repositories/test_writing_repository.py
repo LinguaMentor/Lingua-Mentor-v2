@@ -12,10 +12,30 @@ from tests.conftest import requires_db
 pytestmark = [pytest.mark.asyncio, requires_db]
 
 CATEGORIES = [
-    {"name": "Task Response", "score": Decimal("6.5"), "weight": Decimal("0.250"), "feedback": "Addresses the task."},
-    {"name": "Coherence & Cohesion", "score": Decimal("6.0"), "weight": Decimal("0.250"), "feedback": "Mostly logical."},
-    {"name": "Lexical Resource", "score": Decimal("7.0"), "weight": Decimal("0.250"), "feedback": "Good range."},
-    {"name": "Grammatical Range & Accuracy", "score": Decimal("6.0"), "weight": Decimal("0.250"), "feedback": "Some errors."},
+    {
+        "name": "Task Response",
+        "score": Decimal("6.5"),
+        "weight": Decimal("0.250"),
+        "feedback": "Addresses the task.",
+    },
+    {
+        "name": "Coherence & Cohesion",
+        "score": Decimal("6.0"),
+        "weight": Decimal("0.250"),
+        "feedback": "Mostly logical.",
+    },
+    {
+        "name": "Lexical Resource",
+        "score": Decimal("7.0"),
+        "weight": Decimal("0.250"),
+        "feedback": "Good range.",
+    },
+    {
+        "name": "Grammatical Range & Accuracy",
+        "score": Decimal("6.0"),
+        "weight": Decimal("0.250"),
+        "feedback": "Some errors.",
+    },
 ]
 
 

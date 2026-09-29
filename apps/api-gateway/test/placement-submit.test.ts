@@ -18,10 +18,16 @@ function targetExamDb(
 	opts: { hasBaseline?: boolean } = {},
 ) {
 	return makeFakeDb([
-		{ match: "FROM learner_profiles", rows: target_exam == null ? [{ target_exam: null }] : [{ target_exam }] },
+		{
+			match: "FROM learner_profiles",
+			rows: target_exam == null ? [{ target_exam: null }] : [{ target_exam }],
+		},
 		// Phase 0 gate pre-check: an active baseline row makes placement
 		// available; omit it to exercise the AWAITING_CALIBRATION refusal.
-		{ match: "FROM calibration_baselines", rows: opts.hasBaseline === false ? [] : [{ "?column?": 1 }] },
+		{
+			match: "FROM calibration_baselines",
+			rows: opts.hasBaseline === false ? [] : [{ "?column?": 1 }],
+		},
 	]);
 }
 
@@ -178,7 +184,9 @@ describe("POST /api/v1/placement/submit", () => {
 	it("surfaces an ai-service error through the gateway envelope", async () => {
 		const db = targetExamDb("ielts_academic");
 		const { AppError } = await import("../src/plugins/error-envelope");
-		const aiService = makeFakeAiService({ evaluateError: new AppError(502, "EVALUATION_FAILED", "model failed") });
+		const aiService = makeFakeAiService({
+			evaluateError: new AppError(502, "EVALUATION_FAILED", "model failed"),
+		});
 		const { app, jwt } = await buildTestApp({ db, aiService });
 		const token = await signTestAccessToken(jwt);
 

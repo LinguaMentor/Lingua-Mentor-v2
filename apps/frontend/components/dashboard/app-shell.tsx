@@ -42,7 +42,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 					<Link href="/dashboard" className="text-lg font-bold tracking-tight">
 						LinguaMentor
 					</Link>
-					<Button variant="ghost" size="icon" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => setDrawerOpen(true)}
+						aria-label="Open menu"
+					>
 						<Menu className="h-5 w-5" />
 					</Button>
 				</header>
@@ -65,7 +70,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 					>
 						<div className="flex items-center justify-between">
 							<span className="text-lg font-bold tracking-tight">LinguaMentor</span>
-							<Button variant="ghost" size="icon" onClick={() => setDrawerOpen(false)} aria-label="Close menu">
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => setDrawerOpen(false)}
+								aria-label="Close menu"
+							>
 								<X className="h-5 w-5" />
 							</Button>
 						</div>

@@ -136,20 +136,37 @@ def test_ingest_excluded_essay_blocks_ready():
 
 
 def test_ingest_normalizes_task_level_exam_id():
-    result = ingest([_record("a", "6.0", "6.5", exam="ielts_academic_task2"),
-                     _record("b", "7.0", "7.0", exam="ielts_academic_task2")])
+    result = ingest(
+        [
+            _record("a", "6.0", "6.5", exam="ielts_academic_task2"),
+            _record("b", "7.0", "7.0", exam="ielts_academic_task2"),
+        ]
+    )
     assert {e["exam_type"] for e in result.clean_essays} == {"ielts_academic"}
 
 
 def test_ingest_defers_non_continuous_exams():
     records = [
-        {"essay_id": "delf1", "exam_type": "delf_b2_production_ecrite",
-         "rater_1_tiers": {"realisation_tache": 3}, "rater_1_overall_25": 13},
-        {"essay_id": "tcf1", "exam_type": "tcf_canada_expression_ecrite",
-         "rater_1_overall_20": 12, "rater_2_overall_20": 13},
-        {"essay_id": "toefl1", "exam_type": "toefl_write_an_email",
-         "rater_1_overall": "3.0", "rater_2_overall": "3.5",
-         "rater_1_categories": {}, "rater_2_categories": {}},
+        {
+            "essay_id": "delf1",
+            "exam_type": "delf_b2_production_ecrite",
+            "rater_1_tiers": {"realisation_tache": 3},
+            "rater_1_overall_25": 13,
+        },
+        {
+            "essay_id": "tcf1",
+            "exam_type": "tcf_canada_expression_ecrite",
+            "rater_1_overall_20": 12,
+            "rater_2_overall_20": 13,
+        },
+        {
+            "essay_id": "toefl1",
+            "exam_type": "toefl_write_an_email",
+            "rater_1_overall": "3.0",
+            "rater_2_overall": "3.5",
+            "rater_1_categories": {},
+            "rater_2_categories": {},
+        },
     ]
     result = ingest(records)
     assert result.processed_count == 0

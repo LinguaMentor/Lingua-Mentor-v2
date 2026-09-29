@@ -28,7 +28,11 @@ describe("DELETE /api/v1/user/me — GDPR erasure (ADR 0007)", () => {
 		const { app, jwt } = await buildTestApp({ db });
 		const token = await signTestAccessToken(jwt);
 
-		const res = await app.inject({ method: "DELETE", url: ERASE_URL, headers: bearerHeader(token) });
+		const res = await app.inject({
+			method: "DELETE",
+			url: ERASE_URL,
+			headers: bearerHeader(token),
+		});
 
 		expect(res.statusCode).toBe(204);
 		const update = statements(db).find((s) => s.includes("UPDATE users"))!;
@@ -96,7 +100,11 @@ describe("DELETE /api/v1/user/me — GDPR erasure (ADR 0007)", () => {
 		const { app, jwt } = await buildTestApp({ db });
 		const token = await signTestAccessToken(jwt);
 
-		const res = await app.inject({ method: "DELETE", url: ERASE_URL, headers: bearerHeader(token) });
+		const res = await app.inject({
+			method: "DELETE",
+			url: ERASE_URL,
+			headers: bearerHeader(token),
+		});
 
 		expect(res.headers["set-cookie"]).toBeDefined();
 	});
@@ -106,7 +114,11 @@ describe("DELETE /api/v1/user/me — GDPR erasure (ADR 0007)", () => {
 		const { app, jwt } = await buildTestApp({ db });
 		const token = await signTestAccessToken(jwt);
 
-		const res = await app.inject({ method: "DELETE", url: ERASE_URL, headers: bearerHeader(token) });
+		const res = await app.inject({
+			method: "DELETE",
+			url: ERASE_URL,
+			headers: bearerHeader(token),
+		});
 
 		expect(res.statusCode).toBe(404);
 		// Guarded by gdpr_erasure_requested_at IS NULL — a re-run must not

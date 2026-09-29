@@ -129,8 +129,7 @@ def resolve_consensus(essay: RawGradedEssay) -> Consensus:
             return Consensus(
                 status="excluded",
                 reason=(
-                    f"graders diverge by {max_gap} band (>1.0) — "
-                    "adjudication required but absent"
+                    f"graders diverge by {max_gap} band (>1.0) — adjudication required but absent"
                 ),
             )
         # Drop the outlier: reconcile the adjudicator with the nearer rater.
@@ -152,9 +151,7 @@ def resolve_consensus(essay: RawGradedEssay) -> Consensus:
             flag="adjudicated",
         )
 
-    categories = {
-        k: _avg(essay.rater_1_categories[k], essay.rater_2_categories[k]) for k in shared
-    }
+    categories = {k: _avg(essay.rater_1_categories[k], essay.rater_2_categories[k]) for k in shared}
     consensus_overall = _avg(essay.rater_1_overall, essay.rater_2_overall)
     # >0.5 to 1.0: usable now, but the Lead Examiner must clear it before sign-off.
     flag = "spot_review" if max_gap > SPOT_REVIEW_BAND else None

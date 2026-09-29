@@ -22,9 +22,7 @@ def _categories(n: int) -> list[dict]:
     ]
 
 
-async def test_claim_pending_session_returns_row_and_sets_processing(
-    db_conn, writing_session_id
-):
+async def test_claim_pending_session_returns_row_and_sets_processing(db_conn, writing_session_id):
     row = await claim_session(db_conn, writing_session_id)
 
     assert row is not None
@@ -36,9 +34,7 @@ async def test_claim_pending_session_returns_row_and_sets_processing(
     assert status == "processing"
 
 
-async def test_claim_accepts_processing_status_for_retry_redelivery(
-    db_conn, writing_session_id
-):
+async def test_claim_accepts_processing_status_for_retry_redelivery(db_conn, writing_session_id):
     # First delivery claims pending → processing; a retry (or stalled-job
     # redelivery) must be able to claim again.
     assert await claim_session(db_conn, writing_session_id) is not None

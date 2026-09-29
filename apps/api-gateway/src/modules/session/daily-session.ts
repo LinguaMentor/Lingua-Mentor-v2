@@ -17,11 +17,7 @@ export function utcDateString(now = new Date()): string {
 /** §33's flat 24h would serve a 02:00 session at 00:30 the next day, under a key
  * with no date in it. Expiring on the boundary is what makes the key mean today. */
 export function secondsUntilUtcMidnight(now = new Date()): number {
-	const midnight = Date.UTC(
-		now.getUTCFullYear(),
-		now.getUTCMonth(),
-		now.getUTCDate() + 1,
-	);
+	const midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
 	const remaining = Math.ceil((midnight - now.getTime()) / 1000);
 	return Math.min(Math.max(remaining, 1), SECONDS_PER_DAY);
 }

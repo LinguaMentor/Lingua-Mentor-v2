@@ -69,7 +69,8 @@ export interface ExamPreview {
 	categories: ExamRubricCategory[];
 }
 
-export type WritingSessionStatus = "pending" | "processing" | "scored" | "failed" | "awaiting_calibration";
+export type WritingSessionStatus =
+	"pending" | "processing" | "scored" | "failed" | "awaiting_calibration";
 
 export interface WritingCategoryScore {
 	name: string;

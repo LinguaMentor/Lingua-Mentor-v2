@@ -31,14 +31,12 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-	extends ButtonHTMLAttributes<HTMLButtonElement>,
-		VariantProps<typeof buttonVariants> {
+	extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
 	/** Spinner + disabled submit affordance; ignored under `asChild` (links have no pending state). */
 	isLoading?: boolean;
 	/** Style the child (e.g. next/link) as a button via Radix Slot — no nested interactive elements. */
 	asChild?: boolean;
 }
-
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 	({ className, variant, size, isLoading, disabled, asChild, children, ...props }, ref) => {

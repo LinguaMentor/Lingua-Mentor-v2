@@ -10,9 +10,7 @@ from decimal import Decimal
 import asyncpg
 
 
-async def get_active_baseline(
-    conn: asyncpg.Connection, exam_type: str
-) -> asyncpg.Record | None:
+async def get_active_baseline(conn: asyncpg.Connection, exam_type: str) -> asyncpg.Record | None:
     """Latest displayable baseline for an exam type — what score reports cite."""
     return await conn.fetchrow(
         """

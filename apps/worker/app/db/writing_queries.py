@@ -37,15 +37,11 @@ async def claim_session(conn: asyncpg.Connection, session_id: UUID) -> asyncpg.R
 async def reset_to_pending(conn: asyncpg.Connection, session_id: UUID) -> None:
     """Put the session back to pending before a retryable failure is re-raised,
     so the poll endpoint never shows 'processing' for a job sitting in backoff."""
-    await conn.execute(
-        "UPDATE writing_sessions SET status = 'pending' WHERE id = $1", session_id
-    )
+    await conn.execute("UPDATE writing_sessions SET status = 'pending' WHERE id = $1", session_id)
 
 
 async def mark_failed(conn: asyncpg.Connection, session_id: UUID) -> None:
-    await conn.execute(
-        "UPDATE writing_sessions SET status = 'failed' WHERE id = $1", session_id
-    )
+    await conn.execute("UPDATE writing_sessions SET status = 'failed' WHERE id = $1", session_id)
 
 
 async def save_score(
@@ -65,9 +61,7 @@ async def save_score(
     """
     if len(categories) not in (3, 4):
         raise ValueError(f"expected 3 or 4 rubric categories, got {len(categories)}")
-    padded = categories + [{"name": None, "score": None, "weight": None}] * (
-        4 - len(categories)
-    )
+    padded = categories + [{"name": None, "score": None, "weight": None}] * (4 - len(categories))
     async with conn.transaction():
         await conn.execute(
             """

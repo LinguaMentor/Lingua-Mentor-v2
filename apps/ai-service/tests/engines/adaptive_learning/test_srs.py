@@ -132,7 +132,10 @@ class TestRanking:
         assert len(ranked) == len(SCHEDULABLE_DIMENSIONS)
 
     def test_ties_break_deterministically(self):
-        states = [state("vocabulary", score=0.5, days_ago=1), state("grammar", score=0.5, days_ago=1)]
+        states = [
+            state("vocabulary", score=0.5, days_ago=1),
+            state("grammar", score=0.5, days_ago=1),
+        ]
 
         assert [p.dimension for p in rank_dimensions(states, now=NOW)] == ["grammar", "vocabulary"]
 
@@ -142,9 +145,7 @@ class TestRanking:
             state("vocabulary", score=0.5, days_ago=1, interval=1),
         ]
 
-        ranked = rank_dimensions(
-            states, recent_scores={"grammar": [0.1, 0.9, 0.1, 0.9]}, now=NOW
-        )
+        ranked = rank_dimensions(states, recent_scores={"grammar": [0.1, 0.9, 0.1, 0.9]}, now=NOW)
 
         assert ranked[0].dimension == "grammar"
         assert ranked[0].volatility > 0

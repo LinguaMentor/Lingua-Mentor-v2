@@ -219,9 +219,7 @@ class CalibrationReport:
 
     @property
     def categories_below_gate(self) -> list[str]:
-        return sorted(
-            key for key, r in self.category_pearson.items() if r < CATEGORY_GATE
-        )
+        return sorted(key for key, r in self.category_pearson.items() if r < CATEGORY_GATE)
 
     def to_dict(self) -> dict:
         return {
@@ -238,9 +236,7 @@ class CalibrationReport:
             "cefr_agreement": {
                 "sample_count": self.cefr_agreement.sample_count,
                 "exact_rate": round(self.cefr_agreement.exact_rate, 4),
-                "adjacent_or_exact_rate": round(
-                    self.cefr_agreement.adjacent_or_exact_rate, 4
-                ),
+                "adjacent_or_exact_rate": round(self.cefr_agreement.adjacent_or_exact_rate, 4),
                 "gate": CEFR_GATE,
                 "gate_passed": self.cefr_agreement.gate_passed,
             },

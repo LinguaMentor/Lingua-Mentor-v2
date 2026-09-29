@@ -25,10 +25,18 @@ def _valid_ielts_payload() -> dict:
             {"key": "task_response", "score": 6.5, "feedback": "Addresses most of the task."},
             {"key": "coherence_cohesion", "score": 6.0, "feedback": "Clear progression overall."},
             {"key": "lexical_resource", "score": 7.0, "feedback": "Good range with precision."},
-            {"key": "grammatical_range_accuracy", "score": 6.0, "feedback": "Some agreement errors."},
+            {
+                "key": "grammatical_range_accuracy",
+                "score": 6.0,
+                "feedback": "Some agreement errors.",
+            },
         ],
         "grammar_corrections": [
-            {"original": "peoples", "correction": "people", "explanation": "'people' is already plural"}
+            {
+                "original": "peoples",
+                "correction": "people",
+                "explanation": "'people' is already plural",
+            }
         ],
         "vocabulary_suggestions": [],
     }

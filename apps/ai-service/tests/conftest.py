@@ -23,9 +23,7 @@ requires_db = pytest.mark.skipif(
 @pytest_asyncio.fixture
 async def db_conn():
     """One rolled-back transaction per test — tests never leak rows."""
-    conn = await asyncpg.connect(
-        DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
-    )
+    conn = await asyncpg.connect(DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://", 1))
     tx = conn.transaction()
     await tx.start()
     try:

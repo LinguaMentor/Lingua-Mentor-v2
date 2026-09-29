@@ -45,9 +45,7 @@ class ChatTurn:
     content: str
 
 
-def _user_context_layer(
-    *, language: str, cefr_level: str | None, target_exam: str | None
-) -> str:
+def _user_context_layer(*, language: str, cefr_level: str | None, target_exam: str | None) -> str:
     parts = [f"The learner is practising {language}."]
     if cefr_level:
         parts.append(
@@ -77,9 +75,7 @@ def build_chat_messages(
             _POLICY_LAYER,
             build_persona_layer(persona, tier=tier),
             _TASK_LAYER,
-            _user_context_layer(
-                language=language, cefr_level=cefr_level, target_exam=target_exam
-            ),
+            _user_context_layer(language=language, cefr_level=cefr_level, target_exam=target_exam),
         ]
     )
     messages = [LLMMessage(role="system", content=system_content)]

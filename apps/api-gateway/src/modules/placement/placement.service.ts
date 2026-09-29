@@ -23,10 +23,9 @@ async function resolveTargetExam(
 	enforceCalibrationGate: boolean,
 ): Promise<string> {
 	// Scored against the target exam's rubric — no target exam, no rubric.
-	const { rows } = await deps.db.query(
-		`SELECT target_exam FROM learner_profiles WHERE id = $1`,
-		[learnerProfileId],
-	);
+	const { rows } = await deps.db.query(`SELECT target_exam FROM learner_profiles WHERE id = $1`, [
+		learnerProfileId,
+	]);
 	const targetExam = rows[0]?.target_exam;
 	if (!targetExam) {
 		throw new AppError(400, "NO_TARGET_EXAM", "set a target exam before taking the placement test");
