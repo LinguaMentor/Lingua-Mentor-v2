@@ -133,9 +133,10 @@ jobs:
             exams
             security
           requireScope: false
-          subjectPattern: ^(?![A-Z]).{1,90}$
+          # 120, not 72: Dependabot's grouped titles ("... across 1 directory") run long.
+          subjectPattern: ^(?![A-Z]).{1,120}$
           subjectPatternError: |
-            The subject "{subject}" must start with a lowercase letter and stay under 90 characters.
+            The subject "{subject}" must start with a lowercase letter and stay under 120 characters.
 
   # The only check the ruleset should require. Skipped (service untouched)
   # passes; any failure or cancellation, `changes` included, fails it.
