@@ -1,6 +1,6 @@
 name: Decision
 description: A product or architecture decision, due by the milestone it blocks.
-title: "[Decision] What needs deciding"
+title: "[area] What needs deciding"
 type: Decision
 body:
   - type: textarea

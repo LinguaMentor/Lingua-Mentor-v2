@@ -1,6 +1,6 @@
 name: Epic
 description: A PRD area broken into feature and task sub-issues, scoped to one milestone.
-title: "[Epic] PRD area name"
+title: "[area] PRD area name"
 type: Epic
 body:
   - type: textarea
@@ -13,7 +13,7 @@ body:
   - type: textarea
     id: references
     attributes:
-      label: PRD references
+      label: References
       placeholder: "PRD §8.3, §8.4 · Release criterion §6.1 item 3"
     validations:
       required: true
@@ -38,6 +38,11 @@ body:
     attributes:
       label: Risks and open decisions
       placeholder: "Risk: … · Decision #…"
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      placeholder: "Blocked by #… · Blocks #…"
   - type: markdown
     attributes:
       value: Break the epic down with sub-issues. Progress rolls up on the board automatically.
