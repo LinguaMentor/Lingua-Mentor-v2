@@ -35,8 +35,7 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
     commit-message:
-      # Matches the scope-enum in commitlint.config.js — an ungrouped
-      # Dependabot commit would otherwise fail the commit-msg hook on merge.
+      # Dependabot's PR title becomes the squash commit; the CI PR-title check needs a listed scope.
       prefix: "chore(deps)"
 
   # --- Python: poetry.lock per service ---

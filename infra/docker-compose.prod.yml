@@ -38,6 +38,10 @@ services:
       dockerfile: apps/api-gateway/Dockerfile
     env_file: ../apps/api-gateway/.env.production
     restart: unless-stopped
+    # RS256 keys read at JWT_PRIVATE_KEY_PATH/JWT_PUBLIC_KEY_PATH — mounted, never
+    # baked into the image (Dockerfile). Generate on the host first: scripts/generate-jwt-keys.sh.
+    volumes:
+      - ../apps/api-gateway/keys:/app/keys:ro
     depends_on:
       redis:
         condition: service_healthy

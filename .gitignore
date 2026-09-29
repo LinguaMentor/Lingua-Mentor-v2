@@ -39,3 +39,12 @@ htmlcov/
 # --- misc ---
 .turbo/
 *.tsbuildinfo
+
+# --- local working notes ---
+ENGINEERING_REVIEW.md
+PRODUCT_RESEARCH.md
+CLAUDE.md
+
+# --- product documents: kept private, the repo is public ---
+docs/prd/*.docx
+docs/prd/*.pdf

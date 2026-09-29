@@ -1,0 +1,38 @@
+name: Spike
+description: Time-boxed investigation that ends in a finding, a decision or follow-up tickets.
+title: "[Spike] The question to answer"
+type: Spike
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: The single question this spike answers.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: What is blocked or uncertain until this is answered. Reference the PRD section.
+    validations:
+      required: true
+  - type: input
+    id: timebox
+    attributes:
+      label: Time box
+      placeholder: "2 days"
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Expected output
+      description: A written finding on this issue, a Decision ticket, a prototype, or follow-up tickets.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: Filled when the spike ends. Link any follow-up tickets.

@@ -1,0 +1,43 @@
+name: Epic
+description: A PRD area broken into feature and task sub-issues, scoped to one milestone.
+title: "[Epic] PRD area name"
+type: Epic
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What is true for learners or the business when this epic is finished.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: PRD references
+      placeholder: "PRD §8.3, §8.4 · Release criterion §6.1 item 3"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      value: |
+        In scope:
+        -
+        Out of scope:
+        -
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Success measures
+      description: How we know it worked, e.g. a PRD §5.3 metric or a release criterion.
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and open decisions
+      placeholder: "Risk: … · Decision #…"
+  - type: markdown
+    attributes:
+      value: Break the epic down with sub-issues. Progress rolls up on the board automatically.
