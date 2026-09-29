@@ -3,6 +3,8 @@ on:
   # No `paths:` here: a path-filtered required check never reports on other
   # PRs and leaves them stuck on "Expected". The `changes` job filters instead.
   pull_request:
+    # `edited` re-runs everything, so a title fix can't turn a red gate green.
+    types: [opened, synchronize, reopened, edited]
 
 # A newer push to the same PR makes the older run obsolete.
 concurrency:
@@ -81,12 +83,66 @@ jobs:
   security:
     uses: ./.github/workflows/ci-security.yml
 
+  # Squash merges use the PR title as the commit on main, so the title is what gets validated.
+  pr-title:
+    name: PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            chore
+            refactor
+            test
+            perf
+            style
+            build
+            ci
+          scopes: |
+            auth
+            users
+            placement
+            writing
+            appeal
+            voice
+            exam-simulation
+            billing
+            gateway
+            frontend
+            worker
+            ai-service
+            calibration
+            pipeline
+            adaptive-learning
+            readiness
+            srs
+            shared-schemas
+            infra
+            deps
+            lessons
+            content
+            entitlements
+            analytics
+            reviewer
+            notifications
+            exams
+            security
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).{1,90}$
+          subjectPatternError: |
+            The subject "{subject}" must start with a lowercase letter and stay under 90 characters.
+
   # The only check the ruleset should require. Skipped (service untouched)
   # passes; any failure or cancellation, `changes` included, fails it.
   ci-gate:
     name: CI gate
     if: always()
-    needs: [changes, api-gateway, frontend, ai-service, worker, security]
+    needs: [changes, api-gateway, frontend, ai-service, worker, security, pr-title]
     runs-on: ubuntu-latest
     steps:
       - name: Check upstream results

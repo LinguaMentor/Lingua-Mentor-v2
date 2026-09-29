@@ -1,0 +1,46 @@
+name: Decision
+description: A product or architecture decision, due by the milestone it blocks.
+title: "[Decision] What needs deciding"
+type: Decision
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What forces the decision and what it affects. Reference PRD Appendix B where relevant.
+    validations:
+      required: true
+  - type: input
+    id: blocks
+    attributes:
+      label: Blocks
+      description: The milestone or work that cannot proceed without this.
+      placeholder: "Phase 0a calibration run"
+    validations:
+      required: true
+  - type: input
+    id: decider
+    attributes:
+      label: Decider
+      placeholder: "Product Owner / Tech Lead"
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options
+      value: |
+        A.
+        B.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Criteria
+      description: What the options are judged on (cost, risk, legal exposure, time).
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: Filled when decided. Product decisions are written into the PRD; architecture-only decisions get an ADR.

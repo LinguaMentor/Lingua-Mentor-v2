@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Delivery board and working rules
+    url: https://github.com/orgs/LinguaMentor/projects/1
+    about: Lifecycle, Definition of Ready and Definition of Done live in the board README and CONTRIBUTING.md.

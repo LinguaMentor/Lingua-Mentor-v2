@@ -1,0 +1,39 @@
+name: Task
+description: Technical or operational work, usually a sub-issue of a story or epic, owned by one role.
+title: "[area] Verb + object"
+type: Task
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What this task delivers and why it is needed.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      placeholder: "Parent #… · PRD §… · Brief §…"
+    validations:
+      required: true
+  - type: textarea
+    id: done-when
+    attributes:
+      label: Done when
+      description: Checkable outcomes. For operational work (content, calibration, legal) state the artefact produced.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Approach, risks, anything the next person needs.
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      placeholder: "Blocked by #… · Blocks #…"
