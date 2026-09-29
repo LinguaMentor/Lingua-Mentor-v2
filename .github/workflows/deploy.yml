@@ -1,17 +1,16 @@
 name: Deploy
 on:
-  push:
-    branches: [main]
+  # Manual only until #70 replaces this with the real staging/production
+  # pipeline. A push-triggered deploy with no staging environment means
+  # every commit to main ships straight to whatever's listening, untested.
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-# A push to main is the only thing that ships, so this workflow — not the
-# PR checks in ci.yml — is what actually gates production. Every commit in
-# this repo's history so far went straight to main with no PR, which means
-# CI triggered on pull_request alone would never once have run before a
-# deploy. The five `verify-*` jobs below call the same ci-*.yml workflows
-# via workflow_call so the checks run on the direct-to-main path too, and
+# A manual run can target any commit on main, not just the latest PR merge,
+# so this workflow doesn't trust that commit's CI already passed — the five
+# `verify-*` jobs re-run the same ci-*.yml checks via workflow_call, and
 # `build-and-push` needs all five to pass first.
 #
 # Job order is deliberate:
@@ -68,6 +67,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # GHCR rejects an uppercase repository path, and GitHub Actions
+      # expressions have no toLower() — github.repository_owner is
+      # "LinguaMentor" since the org move, so every tag below needs this.
+      - name: Lowercase image owner
+        id: owner
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "lc=${OWNER,,}" >> "$GITHUB_OUTPUT"
+
       - uses: docker/setup-buildx-action@v4
 
       - uses: docker/login-action@v4
@@ -84,8 +92,8 @@ jobs:
           # The :sha tag is what makes rollback possible — repoint Coolify at
           # a previous commit's image. :latest alone would leave no way back.
           tags: |
-            ghcr.io/${{ github.repository_owner }}/lingumentor-${{ matrix.image }}:latest
-            ghcr.io/${{ github.repository_owner }}/lingumentor-${{ matrix.image }}:${{ github.sha }}
+            ghcr.io/${{ steps.owner.outputs.lc }}/lingumentor-${{ matrix.image }}:latest
+            ghcr.io/${{ steps.owner.outputs.lc }}/lingumentor-${{ matrix.image }}:${{ github.sha }}
           # GitHub Actions cache backend — reuses layers across runs without
           # a separate registry round trip for cache manifests.
           cache-from: type=gha,scope=${{ matrix.image }}
