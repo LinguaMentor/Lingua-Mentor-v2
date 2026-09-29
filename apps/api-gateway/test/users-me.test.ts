@@ -17,7 +17,12 @@ import {
 async function signExpiredAccessToken(privateKeyPem: string): Promise<string> {
 	const key = await importPKCS8(privateKeyPem, "RS256");
 	const now = Math.floor(Date.now() / 1000);
-	return new SignJWT({ role: "learner", tier: "free", lpid: LEARNER_PROFILE_ID, token_use: "access" })
+	return new SignJWT({
+		role: "learner",
+		tier: "free",
+		lpid: LEARNER_PROFILE_ID,
+		token_use: "access",
+	})
 		.setProtectedHeader({ alg: "RS256" })
 		.setIssuer(JWT_ISSUER)
 		.setSubject(USER_ID)
@@ -59,7 +64,11 @@ describe("GET /api/v1/user/me", () => {
 		const { app, jwt } = await buildTestApp({ db: dbWithProfile() });
 		const token = await signTestAccessToken(jwt);
 
-		const res = await app.inject({ method: "GET", url: "/api/v1/user/me", headers: bearerHeader(token) });
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/v1/user/me",
+			headers: bearerHeader(token),
+		});
 
 		expect(res.statusCode).toBe(200);
 		expect(res.json()).toEqual({
@@ -95,7 +104,11 @@ describe("GET /api/v1/user/me", () => {
 		const { app } = await buildTestApp({ db: dbWithProfile(), jwt: material.jwt });
 		const expired = await signExpiredAccessToken(material.privateKeyPem);
 
-		const res = await app.inject({ method: "GET", url: "/api/v1/user/me", headers: bearerHeader(expired) });
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/v1/user/me",
+			headers: bearerHeader(expired),
+		});
 
 		expect(res.statusCode).toBe(401);
 		expect(res.json().error.code).toBe("TOKEN_EXPIRED");
@@ -106,7 +119,11 @@ describe("GET /api/v1/user/me", () => {
 		const { app, jwt } = await buildTestApp({ db });
 		const token = await signTestAccessToken(jwt);
 
-		const res = await app.inject({ method: "GET", url: "/api/v1/user/me", headers: bearerHeader(token) });
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/v1/user/me",
+			headers: bearerHeader(token),
+		});
 
 		expect(res.statusCode).toBe(404);
 		expect(res.json().error.code).toBe("NOT_FOUND");
@@ -116,14 +133,18 @@ describe("GET /api/v1/user/me", () => {
 describe("requireRole", () => {
 	it("allows a request whose role is in the allowed list", async () => {
 		const guard = requireRole("admin", "institution_admin");
-		const request = { user: { userId: "u1", role: "admin", tier: "pro", learnerProfileId: "lp1" } } as never;
+		const request = {
+			user: { userId: "u1", role: "admin", tier: "pro", learnerProfileId: "lp1" },
+		} as never;
 
 		await expect(guard(request, {} as never)).resolves.toBeUndefined();
 	});
 
 	it("rejects a request whose role is not in the allowed list with 403 FORBIDDEN", async () => {
 		const guard = requireRole("admin");
-		const request = { user: { userId: "u1", role: "learner", tier: "free", learnerProfileId: "lp1" } } as never;
+		const request = {
+			user: { userId: "u1", role: "learner", tier: "free", learnerProfileId: "lp1" },
+		} as never;
 
 		await expect(guard(request, {} as never)).rejects.toMatchObject(
 			new AppError(403, "FORBIDDEN", "you do not have permission to perform this action"),

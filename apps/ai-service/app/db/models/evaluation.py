@@ -41,9 +41,7 @@ from app.db.models.enums import (
 
 class WritingSession(Base):
     __tablename__ = "writing_sessions"
-    __table_args__ = (
-        Index("ix_writing_sessions_learner_status", "learner_profile_id", "status"),
-    )
+    __table_args__ = (Index("ix_writing_sessions_learner_status", "learner_profile_id", "status"),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
@@ -130,9 +128,7 @@ class ScoreAppeal(Base):
     discrepancy_delta: Mapped[float | None] = mapped_column(Numeric(4, 2))
     secondary_model_config: Mapped[dict | None] = mapped_column(JSONB)
     # PRD §21.4: discrepancy > 0.5 band flags the appeal for human review.
-    requires_human_review: Mapped[bool] = mapped_column(
-        Boolean, server_default=text("false")
-    )
+    requires_human_review: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()")

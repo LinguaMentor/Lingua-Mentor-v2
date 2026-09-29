@@ -37,6 +37,8 @@ jobs:
               - "pnpm-lock.yaml"
               - "pnpm-workspace.yaml"
               - ".nvmrc"
+              - ".prettierrc.json"
+              - ".prettierignore"
               - ".github/workflows/ci.yml"
             api-gateway:
               - *node-root

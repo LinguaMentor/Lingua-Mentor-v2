@@ -1,19 +1,5 @@
 set -e
 
+# Formats and lints staged files for every app, Python included (see .lintstagedrc.mjs).
+# mypy needs the whole package graph to mean anything, so it stays a CI-time check.
 pnpm exec lint-staged
-
-# lint-staged (above) only knows JS/TS — ai-service and worker are separate
-# Poetry projects, not part of the pnpm workspace, so they get their own
-# pass here. Scoped to `ruff check` only (fast, no type resolution needed);
-# mypy needs the whole package graph to mean anything, so it stays a
-# CI-time check rather than a per-commit one on a handful of staged files.
-staged_py=$(git diff --cached --name-only --diff-filter=ACMR -- '*.py')
-if [ -n "$staged_py" ]; then
-	for app in ai-service worker; do
-		app_files=$(printf '%s\n' "$staged_py" | grep "^apps/$app/" | sed "s#^apps/$app/##")
-		if [ -n "$app_files" ]; then
-			echo "→ ruff check (apps/$app)"
-			(cd "apps/$app" && printf '%s\n' "$app_files" | xargs poetry run ruff check) || exit 1
-		fi
-	done
-fi

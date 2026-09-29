@@ -51,9 +51,7 @@ async def mark_processing(conn: asyncpg.Connection, session_id: UUID) -> bool:
 
 
 async def mark_failed(conn: asyncpg.Connection, session_id: UUID) -> None:
-    await conn.execute(
-        "UPDATE writing_sessions SET status = 'failed' WHERE id = $1", session_id
-    )
+    await conn.execute("UPDATE writing_sessions SET status = 'failed' WHERE id = $1", session_id)
 
 
 async def save_score(
@@ -73,9 +71,7 @@ async def save_score(
     """
     if len(categories) not in (3, 4):
         raise ValueError(f"expected 3 or 4 rubric categories, got {len(categories)}")
-    padded = categories + [{"name": None, "score": None, "weight": None}] * (
-        4 - len(categories)
-    )
+    padded = categories + [{"name": None, "score": None, "weight": None}] * (4 - len(categories))
     async with conn.transaction():
         await conn.execute(
             """

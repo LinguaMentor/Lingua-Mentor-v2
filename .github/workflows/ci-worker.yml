@@ -43,6 +43,7 @@ jobs:
       # as `python -m app.main`, not installed as a package.
       - run: poetry install --no-root --sync
 
+      - run: poetry run ruff format --check .
       - run: poetry run ruff check .
       - run: poetry run mypy app
       - run: poetry run pytest -q

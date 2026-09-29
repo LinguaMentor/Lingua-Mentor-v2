@@ -56,12 +56,8 @@ class User(Base):
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # GDPR (PRD §10.5): erasure is a state transition, not a row delete —
     # anonymised aggregates must survive.
-    gdpr_erasure_requested_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
-    retraining_opt_out: Mapped[bool] = mapped_column(
-        Boolean, server_default=text("false")
-    )
+    gdpr_erasure_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retraining_opt_out: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()")
     )
@@ -96,15 +92,9 @@ class LearnerProfile(Base):
     cefr_listening: Mapped[str | None] = mapped_column(String(2))
     cefr_reading: Mapped[str | None] = mapped_column(String(2))
     cefr_writing: Mapped[str | None] = mapped_column(String(2))
-    placement_completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True)
-    )
-    voice_consent_given: Mapped[bool] = mapped_column(
-        Boolean, server_default=text("false")
-    )
-    onboarding_completed: Mapped[bool] = mapped_column(
-        Boolean, server_default=text("false")
-    )
+    placement_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    voice_consent_given: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     weakness_tags: Mapped[dict | None] = mapped_column(JSONB)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()")

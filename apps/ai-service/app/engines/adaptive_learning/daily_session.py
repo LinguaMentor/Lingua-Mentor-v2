@@ -94,9 +94,7 @@ Return exactly this JSON shape:
 }}"""
 
 
-def _user_context_layer(
-    *, language: str, cefr_level: str | None, target_exam: str | None
-) -> str:
+def _user_context_layer(*, language: str, cefr_level: str | None, target_exam: str | None) -> str:
     parts = [f"The learner is studying {language}."]
     if cefr_level:
         parts.append(f"Their assessed level is CEFR {cefr_level} — pitch the exercises there.")
@@ -130,9 +128,7 @@ def build_daily_session_messages(
             _POLICY_LAYER,
             build_persona_layer(persona, tier=tier),
             _task_layer(dimension),
-            _user_context_layer(
-                language=language, cefr_level=cefr_level, target_exam=target_exam
-            ),
+            _user_context_layer(language=language, cefr_level=cefr_level, target_exam=target_exam),
         ]
     )
     return [
@@ -181,6 +177,4 @@ async def generate_daily_session(
         # No retry: unlike a score, a missing drill costs the learner a slower
         # retry, not a wrong number. The batch will try again tomorrow.
         raise DailySessionError(f"model returned an unusable session: {err}") from err
-    return DailySessionResult(
-        content=content, response=response, prompt_hash=prompt_hash(messages)
-    )
+    return DailySessionResult(content=content, response=response, prompt_hash=prompt_hash(messages))

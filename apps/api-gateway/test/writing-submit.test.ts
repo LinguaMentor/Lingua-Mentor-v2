@@ -55,7 +55,11 @@ describe("POST /api/v1/writing/submit", () => {
 	it("rejects a request with no bearer token", async () => {
 		const { app } = await appWith();
 
-		const res = await app.inject({ method: "POST", url: "/api/v1/writing/submit", payload: VALID_BODY });
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/v1/writing/submit",
+			payload: VALID_BODY,
+		});
 
 		expect(res.statusCode).toBe(401);
 		expect(res.json().error.code).toBe("UNAUTHORIZED");

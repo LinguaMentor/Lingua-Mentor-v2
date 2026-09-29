@@ -145,4 +145,3 @@ export function buildApp(opts: AppOptions = {}): FastifyInstance {
 
 	return app;
 }
-  

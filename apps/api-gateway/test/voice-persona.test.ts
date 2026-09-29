@@ -138,7 +138,11 @@ describe("POST /api/v1/voice/persona/select (PRD §35.3)", () => {
 	it("rejects a request with no bearer token", async () => {
 		const { app } = await buildTestApp();
 
-		const res = await app.inject({ method: "POST", url: SELECT_URL, payload: { persona: "coach" } });
+		const res = await app.inject({
+			method: "POST",
+			url: SELECT_URL,
+			payload: { persona: "coach" },
+		});
 
 		expect(res.statusCode).toBe(401);
 	});

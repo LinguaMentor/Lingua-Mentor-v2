@@ -66,13 +66,16 @@
 /* CEFR band colors — used consistently everywhere a level is shown (radar
  * chart, badges, score cards) so a learner learns to read the color once. */
 @layer utilities {
-	.cefr-a1, .cefr-a2 {
+	.cefr-a1,
+	.cefr-a2 {
 		@apply bg-muted text-muted-foreground border-border;
 	}
-	.cefr-b1, .cefr-b2 {
+	.cefr-b1,
+	.cefr-b2 {
 		@apply bg-primary/10 text-primary border-primary/20;
 	}
-	.cefr-c1, .cefr-c2 {
+	.cefr-c1,
+	.cefr-c2 {
 		@apply bg-success/10 text-success border-success/20;
 	}
 }

@@ -25,11 +25,7 @@ export interface WritingEvalJobData {
 
 /** Narrow surface the app depends on, so tests can substitute a fake. */
 export interface WritingEvalQueue {
-	add(
-		name: string,
-		data: WritingEvalJobData,
-		opts: { jobId: string },
-	): Promise<unknown>;
+	add(name: string, data: WritingEvalJobData, opts: { jobId: string }): Promise<unknown>;
 	close?(): Promise<void>;
 }
 

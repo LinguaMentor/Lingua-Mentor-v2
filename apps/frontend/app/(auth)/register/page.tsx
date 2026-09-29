@@ -44,11 +44,19 @@ export default function RegisterPage() {
 		formState: { errors },
 	} = useForm<RegisterFormValues>({
 		resolver: zodResolver(registerFormSchema),
-		defaultValues: { target_language: "en", target_exam: "", email: "", password: "", display_name: "" },
+		defaultValues: {
+			target_language: "en",
+			target_exam: "",
+			email: "",
+			password: "",
+			display_name: "",
+		},
 	});
 
 	const targetLanguage = watch("target_language");
-	const examsForLanguage = (examsQuery.data ?? []).filter((exam) => exam.language === targetLanguage);
+	const examsForLanguage = (examsQuery.data ?? []).filter(
+		(exam) => exam.language === targetLanguage,
+	);
 
 	const mutation = useMutation({
 		mutationFn: registerRequest,
@@ -79,7 +87,11 @@ export default function RegisterPage() {
 				</>
 			}
 		>
-			<form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="space-y-4" noValidate>
+			<form
+				onSubmit={handleSubmit((values) => mutation.mutate(values))}
+				className="space-y-4"
+				noValidate
+			>
 				<div className="space-y-2">
 					<Label htmlFor="display_name">Full name</Label>
 					<Input
@@ -88,7 +100,9 @@ export default function RegisterPage() {
 						placeholder="Ada Lovelace"
 						{...register("display_name")}
 					/>
-					{errors.display_name && <p className="text-xs text-destructive">{errors.display_name.message}</p>}
+					{errors.display_name && (
+						<p className="text-xs text-destructive">{errors.display_name.message}</p>
+					)}
 				</div>
 
 				<div className="space-y-2">
@@ -143,7 +157,12 @@ export default function RegisterPage() {
 						control={control}
 						name="target_exam"
 						render={({ field }) => (
-							<Select id="target_exam" disabled={examsQuery.isLoading} value={field.value} onChange={field.onChange}>
+							<Select
+								id="target_exam"
+								disabled={examsQuery.isLoading}
+								value={field.value}
+								onChange={field.onChange}
+							>
 								<option value="" disabled>
 									{examsQuery.isLoading
 										? "Loading exams…"
@@ -159,9 +178,13 @@ export default function RegisterPage() {
 							</Select>
 						)}
 					/>
-					{errors.target_exam && <p className="text-xs text-destructive">{errors.target_exam.message}</p>}
+					{errors.target_exam && (
+						<p className="text-xs text-destructive">{errors.target_exam.message}</p>
+					)}
 					{examsQuery.isError && (
-						<p className="text-xs text-destructive">Couldn&apos;t load the exam list — try refreshing.</p>
+						<p className="text-xs text-destructive">
+							Couldn&apos;t load the exam list — try refreshing.
+						</p>
 					)}
 				</div>
 

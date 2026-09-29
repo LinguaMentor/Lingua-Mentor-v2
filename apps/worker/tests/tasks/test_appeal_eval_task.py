@@ -53,10 +53,34 @@ def appeal_payload(secondary: str = "7.50") -> dict:
         "overall_band_score": secondary,
         "cefr_level": "C1",
         "categories": [
-            {"key": "task_response", "name": "Task Response", "score": secondary, "weight": "0.250", "feedback": "ok"},
-            {"key": "coherence_cohesion", "name": "Coherence & Cohesion", "score": secondary, "weight": "0.250", "feedback": "ok"},
-            {"key": "lexical_resource", "name": "Lexical Resource", "score": secondary, "weight": "0.250", "feedback": "ok"},
-            {"key": "grammatical_range", "name": "Grammatical Range & Accuracy", "score": secondary, "weight": "0.250", "feedback": "ok"},
+            {
+                "key": "task_response",
+                "name": "Task Response",
+                "score": secondary,
+                "weight": "0.250",
+                "feedback": "ok",
+            },
+            {
+                "key": "coherence_cohesion",
+                "name": "Coherence & Cohesion",
+                "score": secondary,
+                "weight": "0.250",
+                "feedback": "ok",
+            },
+            {
+                "key": "lexical_resource",
+                "name": "Lexical Resource",
+                "score": secondary,
+                "weight": "0.250",
+                "feedback": "ok",
+            },
+            {
+                "key": "grammatical_range",
+                "name": "Grammatical Range & Accuracy",
+                "score": secondary,
+                "weight": "0.250",
+                "feedback": "ok",
+            },
         ],
         "grammar_corrections": [],
         "vocabulary_suggestions": [],
@@ -199,13 +223,9 @@ async def test_double_delivery_of_resolved_appeal_skips_without_calling_ai_servi
     assert outcome == "skipped"
 
 
-async def test_redelivery_of_processing_appeal_claims_and_resolves(
-    db_conn, fake_pool, appeal_id
-):
+async def test_redelivery_of_processing_appeal_claims_and_resolves(db_conn, fake_pool, appeal_id):
     # Simulate a stalled first delivery that died mid-processing.
-    await db_conn.execute(
-        "UPDATE score_appeals SET status = 'processing' WHERE id = $1", appeal_id
-    )
+    await db_conn.execute("UPDATE score_appeals SET status = 'processing' WHERE id = $1", appeal_id)
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=appeal_payload())

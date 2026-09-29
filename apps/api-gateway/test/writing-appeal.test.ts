@@ -68,7 +68,11 @@ describe("POST /api/v1/writing/appeal/:session_id", () => {
 
 		// The reason made it into the guarded INSERT's params.
 		const insert = db.calls.find((c) => c.text.includes("INSERT INTO score_appeals"));
-		expect(insert?.params).toEqual([SESSION_ID, expect.any(String), "the grammar score feels too low"]);
+		expect(insert?.params).toEqual([
+			SESSION_ID,
+			expect.any(String),
+			"the grammar score feels too low",
+		]);
 	});
 
 	it("accepts an empty body — a reason is optional", async () => {

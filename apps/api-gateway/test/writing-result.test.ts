@@ -99,7 +99,9 @@ describe("GET /api/v1/writing/result/:session_id — calibration transparency (P
 
 describe("GET /api/v1/writing/result/:session_id", () => {
 	it("returns only status while pending", async () => {
-		const db = makeFakeDb([{ match: "FROM writing_sessions", rows: [{ id: SESSION_ID, status: "pending" }] }]);
+		const db = makeFakeDb([
+			{ match: "FROM writing_sessions", rows: [{ id: SESSION_ID, status: "pending" }] },
+		]);
 		const { app, jwt } = await buildTestApp({ db });
 		const token = await signTestAccessToken(jwt);
 
@@ -110,7 +112,9 @@ describe("GET /api/v1/writing/result/:session_id", () => {
 	});
 
 	it("returns only status when failed", async () => {
-		const db = makeFakeDb([{ match: "FROM writing_sessions", rows: [{ id: SESSION_ID, status: "failed" }] }]);
+		const db = makeFakeDb([
+			{ match: "FROM writing_sessions", rows: [{ id: SESSION_ID, status: "failed" }] },
+		]);
 		const { app, jwt } = await buildTestApp({ db });
 		const token = await signTestAccessToken(jwt);
 
@@ -210,7 +214,11 @@ describe("GET /api/v1/writing/result/:session_id", () => {
 		const { app, jwt } = await buildTestApp();
 		const token = await signTestAccessToken(jwt);
 
-		const res = await app.inject({ method: "GET", url: resultUrl("nope"), headers: bearerHeader(token) });
+		const res = await app.inject({
+			method: "GET",
+			url: resultUrl("nope"),
+			headers: bearerHeader(token),
+		});
 
 		expect(res.statusCode).toBe(400);
 		expect(res.json().error.code).toBe("VALIDATION_ERROR");

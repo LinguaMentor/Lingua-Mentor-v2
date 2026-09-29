@@ -42,8 +42,6 @@ class PlacementTaskResponse(BaseModel):
     word_count_min: int
 
 
-
-
 class DimensionOut(BaseModel):
     level: str | None
     source: str  # "assessed" | "proxy" | "pending"

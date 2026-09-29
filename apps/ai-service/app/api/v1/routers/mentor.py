@@ -91,9 +91,7 @@ async def daily_diagnostic(
         raise HTTPException(status_code=404, detail="learner profile not found")
 
     language = profile["target_language"]
-    vector = await skill_vector_repository.get_skill_vector(
-        conn, body.learner_profile_id, language
-    )
+    vector = await skill_vector_repository.get_skill_vector(conn, body.learner_profile_id, language)
     if vector is None:
         vector = await skill_vector_repository.create_skill_vector(
             conn, body.learner_profile_id, language

@@ -25,9 +25,7 @@ export async function getPersonaState(
 	tier: string,
 ): Promise<PersonaState> {
 	const [{ rows }, personas] = await Promise.all([
-		deps.db.query(`SELECT default_persona FROM learner_profiles WHERE id = $1`, [
-			learnerProfileId,
-		]),
+		deps.db.query(`SELECT default_persona FROM learner_profiles WHERE id = $1`, [learnerProfileId]),
 		deps.aiService.listPersonas(),
 	]);
 	if (rows.length === 0) {

@@ -11,9 +11,7 @@ from uuid import UUID
 import asyncpg
 
 
-async def get_subscription_tier(
-    conn: asyncpg.Connection, learner_profile_id: UUID
-) -> str | None:
+async def get_subscription_tier(conn: asyncpg.Connection, learner_profile_id: UUID) -> str | None:
     """The tier that gates persona choice (§17.4). Read fresh rather than taken
     from the caller: the JWT's `tier` claim is up to 15 minutes stale.
     """
@@ -48,9 +46,7 @@ async def get_learner_profile(
 async def get_learner_profile_by_user(
     conn: asyncpg.Connection, user_id: UUID
 ) -> asyncpg.Record | None:
-    return await conn.fetchrow(
-        "SELECT * FROM learner_profiles WHERE user_id = $1", user_id
-    )
+    return await conn.fetchrow("SELECT * FROM learner_profiles WHERE user_id = $1", user_id)
 
 
 async def initialize_cefr_profile(

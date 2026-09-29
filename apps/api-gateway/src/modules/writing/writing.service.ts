@@ -127,9 +127,7 @@ export async function submitWriting(
 		await enqueueWritingEval(deps.queue, sessionId, input.examType);
 	} catch (err) {
 		// Redis down: mark it failed rather than strand the row pending forever.
-		await deps.db.query(`UPDATE writing_sessions SET status = 'failed' WHERE id = $1`, [
-			sessionId,
-		]);
+		await deps.db.query(`UPDATE writing_sessions SET status = 'failed' WHERE id = $1`, [sessionId]);
 		throw err;
 	}
 

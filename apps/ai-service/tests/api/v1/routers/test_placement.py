@@ -52,9 +52,7 @@ async def test_placement_initializes_and_persists_4d_profile(client, db_conn, le
     assert body["placement_completed"] is True
 
     # Persisted to learner_profiles, onboarding flipped, speaking/listening NULL.
-    row = await db_conn.fetchrow(
-        "SELECT * FROM learner_profiles WHERE id = $1", learner_profile_id
-    )
+    row = await db_conn.fetchrow("SELECT * FROM learner_profiles WHERE id = $1", learner_profile_id)
     assert row["cefr_writing"] == "B2"
     assert row["cefr_reading"] == "B2"
     assert row["cefr_speaking"] is None

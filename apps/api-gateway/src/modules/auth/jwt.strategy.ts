@@ -60,7 +60,12 @@ export class JwtStrategy {
 
 	async signAccessToken(claims: AccessTokenClaims): Promise<string> {
 		const key = await this.getPrivateKey();
-		return new SignJWT({ role: claims.role, tier: claims.tier, lpid: claims.lpid, token_use: "access" })
+		return new SignJWT({
+			role: claims.role,
+			tier: claims.tier,
+			lpid: claims.lpid,
+			token_use: "access",
+		})
 			.setProtectedHeader({ alg: "RS256" })
 			.setIssuer(JWT_ISSUER)
 			.setSubject(claims.sub)

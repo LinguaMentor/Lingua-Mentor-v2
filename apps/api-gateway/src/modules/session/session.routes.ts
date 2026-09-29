@@ -22,7 +22,9 @@ export default async function sessionRoutes(app: FastifyInstance): Promise<void>
 		const body = lessonStartSchema.parse(request.body ?? {});
 		return reply
 			.status(201)
-			.send(await startLesson({ aiService: app.aiService }, request.user!.learnerProfileId, body.topic));
+			.send(
+				await startLesson({ aiService: app.aiService }, request.user!.learnerProfileId, body.topic),
+			);
 	});
 
 	// SSE (PRD §19.5): a POST, not EventSource — the browser can't put a bearer

@@ -22,7 +22,9 @@ def _passing_report(exam_type="ielts_academic") -> CalibrationReport:
 
 
 def _args(**overrides) -> SimpleNamespace:
-    base = dict(calibration_version="v1.0-launch", examiner_count=2, kappa=0.87, signed_off_by="Lead")
+    base = dict(
+        calibration_version="v1.0-launch", examiner_count=2, kappa=0.87, signed_off_by="Lead"
+    )
     base.update(overrides)
     return SimpleNamespace(**base)
 
@@ -49,7 +51,9 @@ def test_precheck_rejects_failing_gate():
 
 
 def test_precheck_requires_version():
-    assert "calibration-version" in _persist_precheck([_passing_report()], _args(calibration_version=None))
+    assert "calibration-version" in _persist_precheck(
+        [_passing_report()], _args(calibration_version=None)
+    )
 
 
 def test_precheck_requires_examiner_count():

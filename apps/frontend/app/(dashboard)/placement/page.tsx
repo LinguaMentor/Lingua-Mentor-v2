@@ -53,8 +53,8 @@ function TaskUnavailable({ error, examName }: { error: unknown; examName?: strin
 				<AlertTitle>No target exam set</AlertTitle>
 				<AlertDescription>
 					Your placement essay is marked against your target exam&apos;s rubric, so we need one
-					before you start. Editing your profile isn&apos;t available yet — for now, register a
-					new account with a target exam selected.
+					before you start. Editing your profile isn&apos;t available yet — for now, register a new
+					account with a target exam selected.
 				</AlertDescription>
 			</Alert>
 		);
@@ -62,7 +62,9 @@ function TaskUnavailable({ error, examName }: { error: unknown; examName?: strin
 	return (
 		<Alert variant="destructive">
 			<AlertTitle>Couldn&apos;t load the placement task</AlertTitle>
-			<AlertDescription>Something went wrong on our side. Try refreshing the page.</AlertDescription>
+			<AlertDescription>
+				Something went wrong on our side. Try refreshing the page.
+			</AlertDescription>
 		</Alert>
 	);
 }
@@ -76,8 +78,8 @@ function PlacementResult({ profile }: { profile: CefrProfile }) {
 					Placement complete
 				</AlertTitle>
 				<AlertDescription>
-					Your writing level is assessed. Reading is proxied from it for now; speaking and
-					listening stay pending until voice practice lands.
+					Your writing level is assessed. Reading is proxied from it for now; speaking and listening
+					stay pending until voice practice lands.
 				</AlertDescription>
 			</Alert>
 
@@ -85,7 +87,8 @@ function PlacementResult({ profile }: { profile: CefrProfile }) {
 				<CardHeader>
 					<CardTitle>Your 4D CEFR profile</CardTitle>
 					<CardDescription>
-						Each skill is tracked on its own — an averaged level would hide the gaps worth working on.
+						Each skill is tracked on its own — an averaged level would hide the gaps worth working
+						on.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -157,8 +160,8 @@ function PlacementForm({ task }: { task: PlacementTask }) {
 						// A real examiner penalises an under-length response rather than
 						// refusing it, so this warns and still lets them submit.
 						<p className="text-xs text-muted-foreground">
-							Under {task.word_count_min} words is marked down, the same as it would be in the
-							real exam.
+							Under {task.word_count_min} words is marked down, the same as it would be in the real
+							exam.
 						</p>
 					)}
 				</div>

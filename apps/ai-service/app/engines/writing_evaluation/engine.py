@@ -51,9 +51,7 @@ def _parse_output(raw: str, config: ExamConfig) -> LLMScoringOutput:
     return output
 
 
-def compute_overall_band(
-    output: LLMScoringOutput, config: ExamConfig
-) -> Decimal:
+def compute_overall_band(output: LLMScoringOutput, config: ExamConfig) -> Decimal:
     """Composite formula (§21.2): Σ category × weight, rounded to the exam's
     increment (nearest 0.5 band). Deterministic — never asked of the model."""
     weights = {c.key: c.weight for c in config.writing.rubric_categories}

@@ -36,7 +36,9 @@ describe("POST /api/v1/session/lesson (PRD §35.3)", () => {
 	it("rejects a request with no bearer token", async () => {
 		const { app } = await buildTestApp();
 
-		expect((await app.inject({ method: "POST", url: LESSON_URL, payload: {} })).statusCode).toBe(401);
+		expect((await app.inject({ method: "POST", url: LESSON_URL, payload: {} })).statusCode).toBe(
+			401,
+		);
 	});
 });
 
@@ -54,9 +56,9 @@ describe("POST /api/v1/session/lesson/:id/message — SSE (PRD §19.5)", () => {
 
 		expect(res.statusCode).toBe(200);
 		expect(res.headers["content-type"]).toContain("text/event-stream");
-		expect(res.body).toContain('event: token');
+		expect(res.body).toContain("event: token");
 		expect(res.body).toContain('"delta":"Hi"');
-		expect(res.body).toContain('event: done');
+		expect(res.body).toContain("event: done");
 	});
 
 	it("disables proxy buffering, or nothing arrives until the end", async () => {

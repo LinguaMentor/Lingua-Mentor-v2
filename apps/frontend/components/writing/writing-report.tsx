@@ -113,7 +113,8 @@ export function WritingReport({ result }: { result: WritingResult }) {
 					Evaluation failed
 				</AlertTitle>
 				<AlertDescription>
-					The scoring service couldn&apos;t evaluate this essay. Your text is safe — submit it again.
+					The scoring service couldn&apos;t evaluate this essay. Your text is safe — submit it
+					again.
 				</AlertDescription>
 			</Alert>
 		);
@@ -145,9 +146,7 @@ export function WritingReport({ result }: { result: WritingResult }) {
 				</Alert>
 			)}
 			<ScoreHeader result={result} />
-			{result.word_count != null && (
-				<Badge variant="secondary">{result.word_count} words</Badge>
-			)}
+			{result.word_count != null && <Badge variant="secondary">{result.word_count} words</Badge>}
 			<Separator />
 			<CategoryBreakdown result={result} />
 			<GrammarCorrections result={result} />

@@ -1,6 +1,14 @@
 "use client";
 
-import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from "recharts";
+import {
+	PolarAngleAxis,
+	PolarGrid,
+	PolarRadiusAxis,
+	Radar,
+	RadarChart,
+	ResponsiveContainer,
+	Tooltip,
+} from "recharts";
 
 import { CefrBadge } from "@/components/shared/cefr-badge";
 import type { CefrProfile, CefrSource } from "@/lib/api/types";
@@ -15,10 +23,30 @@ interface RadarDatum {
 
 function buildData(profile: CefrProfile): RadarDatum[] {
 	return [
-		{ skill: "Writing", score: cefrToScore(profile.writing.level), level: profile.writing.level, source: profile.writing.source },
-		{ skill: "Speaking", score: cefrToScore(profile.speaking.level), level: profile.speaking.level, source: profile.speaking.source },
-		{ skill: "Listening", score: cefrToScore(profile.listening.level), level: profile.listening.level, source: profile.listening.source },
-		{ skill: "Reading", score: cefrToScore(profile.reading.level), level: profile.reading.level, source: profile.reading.source },
+		{
+			skill: "Writing",
+			score: cefrToScore(profile.writing.level),
+			level: profile.writing.level,
+			source: profile.writing.source,
+		},
+		{
+			skill: "Speaking",
+			score: cefrToScore(profile.speaking.level),
+			level: profile.speaking.level,
+			source: profile.speaking.source,
+		},
+		{
+			skill: "Listening",
+			score: cefrToScore(profile.listening.level),
+			level: profile.listening.level,
+			source: profile.listening.source,
+		},
+		{
+			skill: "Reading",
+			score: cefrToScore(profile.reading.level),
+			level: profile.reading.level,
+			source: profile.reading.source,
+		},
 	];
 }
 
@@ -58,7 +86,10 @@ export function CefrRadar({ profile }: { profile: CefrProfile }) {
 				<ResponsiveContainer width="100%" height="100%">
 					<RadarChart data={data} outerRadius="70%">
 						<PolarGrid stroke="hsl(var(--border))" />
-						<PolarAngleAxis dataKey="skill" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+						<PolarAngleAxis
+							dataKey="skill"
+							tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+						/>
 						<PolarRadiusAxis
 							domain={[0, 6]}
 							tickCount={7}
@@ -79,7 +110,10 @@ export function CefrRadar({ profile }: { profile: CefrProfile }) {
 
 			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 				{data.map((datum) => (
-					<div key={datum.skill} className="flex flex-col items-center gap-1.5 rounded-lg border border-border p-3">
+					<div
+						key={datum.skill}
+						className="flex flex-col items-center gap-1.5 rounded-lg border border-border p-3"
+					>
 						<span className="text-xs font-medium text-muted-foreground">{datum.skill}</span>
 						<CefrBadge level={datum.level} source={datum.source} />
 					</div>
