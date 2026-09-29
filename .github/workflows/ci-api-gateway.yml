@@ -3,6 +3,10 @@ on:
   # Runs only when called: ci.yml on pull requests (with per-service path
   # filtering inside the workflow) and deploy.yml on every push to main.
   workflow_call:
+
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest

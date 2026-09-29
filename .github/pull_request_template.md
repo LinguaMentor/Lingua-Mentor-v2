@@ -8,7 +8,7 @@ Refs #  <!-- Not Fixes/Closes: QA closes the issue after testing on staging -->
 ## Type of Change
 - `<type>(<scope>): <short summary>`  <!-- Same as the PR title; the type follows the ticket's type. -->
 
-## Changes
+## Changes Made
 - Bullet list of concrete changes made
 - Keep it scannable, not a diff narration
 
