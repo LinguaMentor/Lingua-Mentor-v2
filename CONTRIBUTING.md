@@ -30,7 +30,13 @@ New / Triage → Backlog → Ready → In Progress → Blocked → In Review →
 - **Done:** passed QA; QA closes the issue.
 - **Released:** shipped in a tagged production release.
 
-If QA finds the ticket doesn't meet its own acceptance criteria, it goes back to In Progress with the `qa-failed` label and a comment listing what failed. The fix is a new PR on the same ticket. Anything else QA finds is a new Bug ticket.
+Every ticket passes through In Review and QA Testing, whatever its type. No column is skipped.
+
+- **Code and config changes:** In Review is the PR review. QA Testing is verification on staging. Until staging exists (#71), QA verifies against `main` locally or from the CI evidence instead, and says which on the issue.
+- **Spikes and Decisions:** In Review is the Tech Lead or Product Owner reviewing the written result on the issue. QA Testing checks every Done-when item is met.
+- **Epics** don't move through the columns themselves; an epic is Done when every sub-issue is Done.
+
+If QA finds the ticket doesn't meet its own acceptance criteria, it goes back to In Progress with the `qa-failed` label and a comment listing what failed. The fix is a new PR on the same ticket. Anything else QA finds is a new, linked Bug ticket.
 
 ### Definition of Ready
 
