@@ -1,6 +1,6 @@
 name: Spike
 description: Time-boxed investigation that ends in a finding, a decision or follow-up tickets.
-title: "[Spike] The question to answer"
+title: "[area] The question to answer"
 type: Spike
 body:
   - type: textarea
