@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 # A push to main is the only thing that ships, so this workflow — not the
 # PR checks in ci.yml — is what actually gates production. Every commit in
 # this repo's history so far went straight to main with no PR, which means
@@ -19,14 +22,24 @@ on:
 jobs:
   verify-api-gateway:
     uses: ./.github/workflows/ci-api-gateway.yml
+    permissions:
+      contents: read
   verify-frontend:
     uses: ./.github/workflows/ci-frontend.yml
+    permissions:
+      contents: read
   verify-ai-service:
     uses: ./.github/workflows/ci-ai-service.yml
+    permissions:
+      contents: read
   verify-worker:
     uses: ./.github/workflows/ci-worker.yml
+    permissions:
+      contents: read
   verify-security:
     uses: ./.github/workflows/ci-security.yml
+    permissions:
+      contents: read
 
   build-and-push:
     needs:
@@ -85,6 +98,8 @@ jobs:
   migrate:
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: apps/ai-service
@@ -144,6 +159,8 @@ jobs:
   trigger-deploy:
     needs: migrate
     runs-on: ubuntu-latest
+    # Only calls the external Coolify/Dokploy webhook — no GitHub API use, no token needed.
+    permissions: {}
     steps:
       # ---------------------------------------------------------------
       # ACTION REQUIRED (Frank): this step is a placeholder. Before it

@@ -4,7 +4,11 @@ One or two sentences: what does this PR do and why.
 ## Related issue
 Refs #  <!-- Not Fixes/Closes: QA closes the issue after testing on staging -->
 
-## Changes
+### Type of Change
+
+- `<type>(<scope>): <short summary>`
+
+## Changes Made
 - Bullet list of concrete changes made
 - Keep it scannable, not a diff narration
 
