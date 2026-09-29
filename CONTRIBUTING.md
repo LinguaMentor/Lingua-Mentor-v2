@@ -54,7 +54,7 @@ If QA finds the ticket doesn't meet its own acceptance criteria, it goes back to
 
 - Branch: `type/<issue>-<short-slug>`, for example `feat/142-usage-cap`.
 - PR title: a conventional commit (`feat(placement): start placement at A1`). It becomes the commit on `main`, so the `PR title` job in CI checks it against the allowed types and scopes (listed in `.github/workflows/ci.yml`), and a bad title fails the CI gate. Titles are re-checked whenever they are edited. Commit messages on your branch aren't checked, since squashing discards them.
-- PR body: `Refs #<issue>`, never `Closes #<issue>`. A closing keyword would close the issue at merge and skip QA.
+- PR body: `Refs #<issue>`, never `Closes #<issue>`. Don't use the PR sidebar's "Link an issue" button either — GitHub auto-closes any issue linked that way on merge, same as a closing keyword, and it skips QA.
 - One ticket per PR, kept small.
 
 ## Environments and releases

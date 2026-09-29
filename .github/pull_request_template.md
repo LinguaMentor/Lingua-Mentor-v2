@@ -2,7 +2,7 @@
 One or two sentences: what does this PR do and why.
 
 ## Related issue
-Refs #  <!-- Not Fixes/Closes: QA closes the issue after testing on staging -->
+Refs #  <!-- Not Fixes/Closes, and don't use the sidebar's "Link an issue" button either: both auto-close the issue on merge. QA closes it after staging verification. -->
 
 ## Changes
 - Bullet list of concrete changes made
