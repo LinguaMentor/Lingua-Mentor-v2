@@ -1,7 +1,7 @@
-name: Task
-description: "Technical or operational work with no user-facing change."
+name: Refactor
+description: "Restructuring code without changing what it does."
 title: "<Verb> <what>"
-type: Task
+type: Refactor
 body:
   - type: markdown
     attributes:
@@ -10,7 +10,7 @@ body:
     id: summary
     attributes:
       label: "Summary"
-      description: "What gets done and why, in one or two sentences."
+      description: "What gets restructured and why, in one or two sentences."
     validations:
       required: true
   - type: textarea
@@ -18,6 +18,13 @@ body:
     attributes:
       label: "Background"
       description: "Current state with file paths, decisions already made and why."
+    validations:
+      required: true
+  - type: textarea
+    id: unchanged
+    attributes:
+      label: "Behaviour that must not change"
+      description: "The observable behaviour the tests and QA must still see afterwards."
     validations:
       required: true
   - type: textarea

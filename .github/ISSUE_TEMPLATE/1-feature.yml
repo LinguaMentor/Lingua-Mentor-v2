@@ -1,7 +1,7 @@
-name: Task
-description: "Technical or operational work with no user-facing change."
-title: "<Verb> <what>"
-type: Task
+name: Feature
+description: "A user-facing capability."
+title: "<Who> can <do what>"
+type: Feature
 body:
   - type: markdown
     attributes:
@@ -10,7 +10,15 @@ body:
     id: summary
     attributes:
       label: "Summary"
-      description: "What gets done and why, in one or two sentences."
+      description: "One or two sentences on the outcome the user gets."
+    validations:
+      required: true
+  - type: textarea
+    id: user-story
+    attributes:
+      label: "User story"
+      value: |
+        As a ..., I want ..., so that ...
     validations:
       required: true
   - type: textarea
@@ -25,6 +33,12 @@ body:
     attributes:
       label: "Scope"
       description: "What is in scope and what is not."
+      value: |
+        In scope:
+        -
+
+        Out of scope:
+        -
     validations:
       required: true
   - type: textarea
@@ -40,7 +54,8 @@ body:
       label: "Acceptance criteria"
       description: "Things someone else can check, one per line."
       value: |
-        - [ ] 
+        - [ ] Given ..., when ..., then ...
+        - [ ] Edge cases: ...
     validations:
       required: true
   - type: textarea

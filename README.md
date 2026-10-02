@@ -40,6 +40,5 @@ pnpm dev:worker        # no port; easy to forget, and queued jobs stall without 
 
 ## Working on the project
 
-- How work flows from ticket to release: [`CONTRIBUTING.md`](CONTRIBUTING.md)
-- Delivery board: [LinguaMentor Delivery](https://github.com/orgs/LinguaMentor/projects/1)
+- How we work, and what is being worked on: [LinguaMentor Delivery](https://github.com/orgs/LinguaMentor/projects/2)
 - Product documents: [`docs/prd/`](docs/prd/README.md)

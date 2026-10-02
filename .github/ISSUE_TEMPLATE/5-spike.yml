@@ -1,38 +1,64 @@
 name: Spike
-description: Time-boxed investigation that ends in a finding, a decision or follow-up tickets.
-title: "[area] The question to answer"
+description: "A time-boxed investigation that ends in an answer."
+title: "Spike: <question>?"
 type: Spike
 body:
-  - type: textarea
-    id: question
+  - type: markdown
     attributes:
-      label: Question
-      description: The single question this spike answers.
+      value: "Write this so a teammate can do the work without reading any other document: current state, decisions already made, exact specification, how to check it. Never paste learner data, secrets, prices, scoring prompts or PRD text: this repository is public."
+  - type: textarea
+    id: summary
+    attributes:
+      label: "Summary"
+      description: "The question and why it matters now."
     validations:
       required: true
   - type: textarea
-    id: why
+    id: background
     attributes:
-      label: Why it matters
-      description: What is blocked or uncertain until this is answered. Reference the PRD section.
-    validations:
-      required: true
-  - type: input
-    id: timebox
-    attributes:
-      label: Time box
-      placeholder: "2 days"
+      label: "Background"
+      description: "Current state with file paths, decisions already made and why."
     validations:
       required: true
   - type: textarea
-    id: output
+    id: questions
     attributes:
-      label: Expected output
-      description: A written finding on this issue, a Decision ticket, a prototype, or follow-up tickets.
+      label: "Questions to answer"
+      description: "For each one: how you will test it and what counts as a pass."
+      value: |
+        1. Question:
+           How to test:
+           Passes if:
+    validations:
+      required: true
+  - type: dropdown
+    id: time-box
+    attributes:
+      label: "Time box"
+      options:
+        - half a day
+        - 1 day
+        - 2 days
+        - 3 days
     validations:
       required: true
   - type: textarea
-    id: result
+    id: deliverable
     attributes:
-      label: Result
-      description: Filled when the spike ends. Link any follow-up tickets.
+      label: "Deliverable"
+      description: "What exists at the end, e.g. a comment on this ticket, a decision record, a prototype branch."
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: "Out of scope"
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: "Dependencies"
+      description: "Tickets that must land first, or that wait on this one."
+      value: |
+        Blocked by: #
+        Blocks: #
+        Related: #

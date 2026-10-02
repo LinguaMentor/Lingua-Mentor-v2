@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Delivery board and working rules
-    url: https://github.com/orgs/LinguaMentor/projects/1
-    about: Lifecycle, Definition of Ready and Definition of Done live in the board README and CONTRIBUTING.md.
+  - name: How we work
+    url: https://github.com/orgs/LinguaMentor/projects/2
+    about: Ticket types, naming, statuses and branching are in the board README.
