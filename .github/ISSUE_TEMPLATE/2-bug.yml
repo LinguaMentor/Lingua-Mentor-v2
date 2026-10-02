@@ -1,7 +1,7 @@
-name: Task
-description: "Technical or operational work with no user-facing change."
-title: "<Verb> <what>"
-type: Task
+name: Bug
+description: "Something behaves differently from what it should."
+title: "<What is wrong>, <where>"
+type: Bug
 body:
   - type: markdown
     attributes:
@@ -10,37 +10,58 @@ body:
     id: summary
     attributes:
       label: "Summary"
-      description: "What gets done and why, in one or two sentences."
+      description: "What is wrong, in one or two sentences."
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: "Where it happens"
+      options:
+        - production
+        - staging
+        - local
     validations:
       required: true
   - type: textarea
-    id: background
+    id: steps
     attributes:
-      label: "Background"
-      description: "Current state with file paths, decisions already made and why."
+      label: "Steps to reproduce"
+      value: |
+        1.
     validations:
       required: true
   - type: textarea
-    id: scope
+    id: expected
     attributes:
-      label: "Scope"
-      description: "What is in scope and what is not."
+      label: "Expected"
     validations:
       required: true
   - type: textarea
-    id: specification
+    id: actual
     attributes:
-      label: "Specification"
-      description: "Approach, files to change, API endpoints (method, route, payload), data and migrations, config. Points of attention: security, performance, compatibility."
+      label: "Actual"
     validations:
       required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "Evidence"
+      description: "Request ID, release, device, logs. Never learner data."
+  - type: textarea
+    id: suspected-cause
+    attributes:
+      label: "Suspected cause"
+      description: "Optional: where you think it goes wrong, and why."
   - type: textarea
     id: acceptance-criteria
     attributes:
       label: "Acceptance criteria"
       description: "Things someone else can check, one per line."
       value: |
-        - [ ] 
+        - [ ] Cause written on this ticket
+        - [ ] A test fails before the fix and passes after
+        - [ ] QA confirms on staging
     validations:
       required: true
   - type: textarea
@@ -52,19 +73,3 @@ body:
         | # | Scenario | Expected result | Manual or automated |
         |---|---|---|---|
         | | | | |
-    validations:
-      required: true
-  - type: textarea
-    id: dependencies
-    attributes:
-      label: "Dependencies"
-      description: "Tickets that must land first, or that wait on this one."
-      value: |
-        Blocked by: #
-        Blocks: #
-        Related: #
-  - type: textarea
-    id: risks
-    attributes:
-      label: "Risks and gotchas"
-      description: "Risks and their mitigation, open questions, and traps a newcomer would fall into."

@@ -1,0 +1,40 @@
+name: Epic
+description: "A capability delivered by several Features."
+title: "<Capability, as a short noun phrase>"
+type: Epic
+body:
+  - type: markdown
+    attributes:
+      value: "Write this so a teammate can do the work without reading any other document: current state, decisions already made, exact specification, how to check it. Never paste learner data, secrets, prices, scoring prompts or PRD text: this repository is public."
+  - type: textarea
+    id: goal
+    attributes:
+      label: "Goal"
+      description: "The outcome this Epic delivers and for whom."
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: "Background"
+      description: "Current state with file paths, decisions already made and why."
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: "Scope"
+      description: "The Features that are in and the ones that are out."
+    validations:
+      required: true
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: "Success criteria"
+      description: "How we know the Epic is done, in terms someone can check."
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: "Risks and open questions"

@@ -1,30 +1,36 @@
-<!-- PR title mirrors the ticket: Task [infra] Stop the failing Deploy runs until staging exists → ci(infra): stop the failing Deploy runs until staging exists. Feature → feat, Bug → fix, other types never feat/fix. See CONTRIBUTING.md. -->
+<!--
+Title: <type>(<area>): <ticket title, first letter lowercase>   e.g. feat(api): learner can reset their password by email
+Feature → feat · Bug → fix · Refactor → refactor · Task → ci, build, chore, docs or test · Spike → docs
+Breaking change: add ! before the colon and explain the impact below.
+Keep "Refs". Closes/Fixes/Resolves would close the ticket at merge, before QA tests it.
+-->
+
+Refs #
+
 ## Summary
-One or two sentences: what does this PR do and why.
 
-## Related issue
-Refs #  <!-- Not Fixes/Closes: QA closes the issue after testing on staging -->
+<!-- One or two sentences: what this PR does and why. -->
 
-## Type of Change
-- `<type>(<scope>): <short summary>`  <!-- Same as the PR title; the type follows the ticket's type. -->
+## Changes made
 
-## Changes Made
-- Bullet list of concrete changes made
-- Keep it scannable, not a diff narration
+-
 
 ## How to test
-Steps a reviewer can follow to verify this works:
-1. ...
-2. ...
 
-## Screenshots / recordings
-(if UI-facing: before/after, or a short clip)
+1.
+
+## Screenshots or evidence
+
+<!-- Required for UI changes: before and after, checked on a narrow mobile screen.
+     Performance or accessibility work: before and after Lighthouse scores. Delete if not applicable. -->
+
+## Notes for the reviewer
+
+<!-- Trade-offs, risks, follow-up tickets, what you chose not to do. Delete if nothing. -->
 
 ## Checklist
-- [ ] Tests added/updated
-- [ ] Docs updated (if applicable)
-- [ ] No secrets/keys committed
-- [ ] CI passes locally
 
-## Notes for reviewer
-Anything tricky, out of scope, or a deliberate trade-off worth flagging.
+- [ ] Tests added or updated for the changed behaviour
+- [ ] Docs and READMEs updated in this PR, or not needed
+- [ ] No secrets, learner data or private product text in the diff, tests or screenshots
+- [ ] Database change: works with the previous release's code
