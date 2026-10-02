@@ -138,9 +138,9 @@ jobs:
       - name: Check branch name, ticket reference and closing keywords
         run: |
           fail() { echo "::error::$1"; exit 1; }
-          [[ "$HEAD_REF" =~ ^([0-9]+)-[a-z0-9][a-z0-9-]*$ ]] \
-            || fail "Branch '$HEAD_REF' must be <issue number>-<short-name>, e.g. 123-password-reset."
-          issue="${BASH_REMATCH[1]}"
+          [[ "$HEAD_REF" =~ ^(feature|bug|task|refactor|spike)/([0-9]+)-[a-z0-9][a-z0-9-]*$ ]] \
+            || fail "Branch '$HEAD_REF' must be <type>/<issue number>-<title-slug>, e.g. feature/123-password-reset (type: feature, bug, task, refactor or spike)."
+          issue="${BASH_REMATCH[2]}"
           grep -Eiq "(^|[^a-z])(close[sd]?|fix(e[sd])?|resolve[sd]?)[: ]+(#|gh-|[a-z0-9_.-]+/[a-z0-9_.-]+#|https?://github\.com/[^ ]+/issues/)[0-9]+" <<<"$PR_BODY" \
             && fail "Use 'Refs #$issue', not Closes/Fixes/Resolves: those close the ticket at merge and skip QA."
           grep -Eq "Refs #$issue([^0-9]|$)" <<<"$PR_BODY" \
