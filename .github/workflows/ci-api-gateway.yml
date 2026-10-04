@@ -32,9 +32,8 @@ jobs:
       - run: pnpm exec prettier --check apps/api-gateway packages
 
       - run: pnpm --filter @lingumentor/shared-schemas build
+      - run: pnpm --filter api-gateway typecheck
 
       - run: pnpm --filter api-gateway lint
       - run: pnpm --filter api-gateway test
-      # api-gateway has no separate typecheck script — `tsc` (its build
-      # step) does the type check as part of compiling to dist/.
       - run: pnpm --filter api-gateway build
