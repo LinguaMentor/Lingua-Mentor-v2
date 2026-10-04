@@ -9,7 +9,7 @@ managed as a pnpm workspace; the AI service and background worker are Python,
 managed independently.
 
     apps/
-      frontend/       Next.js 14 PWA
+      frontend/       Next.js 16 PWA
       api-gateway/     Node.js / Fastify: REST, SSE, voice WebSocket
       ai-service/      Python / FastAPI: scoring, chat and content engines
       worker/          Python / BullMQ consumer: background jobs on Redis
