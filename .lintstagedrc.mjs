@@ -1,10 +1,8 @@
-// Each app pins its own ESLint major version (api-gateway: 9/flat-config,
-// frontend: 8/.eslintrc — see apps/frontend/next.config.js for why) — so
+// Each app has its own ESLint install and flat config (eslint.config.mjs), so
 // staged files have to be linted with *that app's own* locally-installed
 // `eslint` binary, not a single repo-root one. `pnpm --filter <app> exec`
 // resolves node_modules/.bin/eslint inside the right app, which also makes
-// each app's config-file lookup (flat config vs .eslintrc) resolve to the
-// version that actually understands it.
+// each app's config-file lookup resolve to that app's own config.
 //
 // Scope is deliberately limited to apps/api-gateway and apps/frontend —
 // the two packages that have a working ESLint config. packages/* has no
