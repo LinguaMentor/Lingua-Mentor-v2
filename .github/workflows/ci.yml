@@ -145,9 +145,12 @@ jobs:
             && fail "Use 'Refs #$issue', not Closes/Fixes/Resolves: those close the ticket at merge and skip QA."
           grep -Eq "Refs #$issue([^0-9]|$)" <<<"$PR_BODY" \
             || fail "The PR description must contain 'Refs #$issue' to match the branch name."
-          state="$(gh issue view "$issue" --json state --jq .state 2>/dev/null)" \
+          # Issues and PRs share one number space; only a PR's payload has a pull_request key.
+          item="$(gh api "repos/$GH_REPO/issues/$issue" --jq '[.state, has("pull_request")] | @tsv' 2>/dev/null)" \
             || fail "Issue #$issue does not exist in this repository."
-          [[ "$state" == "OPEN" ]] || fail "Issue #$issue is closed. Reopen it or reference the right ticket."
+          read -r state is_pr <<<"$item"
+          [[ "$is_pr" == "false" ]] || fail "#$issue is a pull request, not a ticket. Reference the ticket this work belongs to."
+          [[ "$state" == "open" ]] || fail "Issue #$issue is closed. Reopen it or reference the right ticket."
           echo "Linked to open issue #$issue."
 
   # The only check the ruleset should require. Skipped (service untouched)
