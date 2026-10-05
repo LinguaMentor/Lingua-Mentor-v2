@@ -5,7 +5,7 @@ type: Epic
 body:
   - type: markdown
     attributes:
-      value: "Write this so a teammate can do the work without reading any other document: current state, decisions already made, exact specification, how to check it. Never paste learner data, secrets, prices, scoring prompts or PRD text: this repository is public."
+      value: "Write this so the assignee can start without reading any other document. Say what must be true and why, and leave how and where in the code to the engineer. State decisions already made as constraints. Never paste learner data, secrets, prices, scoring prompts or PRD text: this repository is public."
   - type: textarea
     id: goal
     attributes:
@@ -17,14 +17,14 @@ body:
     id: background
     attributes:
       label: "Background"
-      description: "Current state with file paths, decisions already made and why."
+      description: "The situation today in terms of behaviour, the decisions already made and why, and the facts and numbers the work depends on."
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
       label: "Scope"
-      description: "The Features that are in and the ones that are out."
+      description: "The Features that are in scope, and the ones that are out."
     validations:
       required: true
   - type: textarea
@@ -32,6 +32,17 @@ body:
     attributes:
       label: "Success criteria"
       description: "How we know the Epic is done, in terms someone can check."
+    validations:
+      required: true
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: "Definition of Done"
+      description: "The closing checklist, adjusted for the ticket type."
+      value: |
+        - [ ] Every sub-issue is Done
+        - [ ] Success criteria are verified
+        - [ ] Follow-up work is ticketed
     validations:
       required: true
   - type: textarea

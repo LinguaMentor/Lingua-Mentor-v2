@@ -5,60 +5,72 @@ type: Task
 body:
   - type: markdown
     attributes:
-      value: "Write this so a teammate can do the work without reading any other document: current state, decisions already made, exact specification, how to check it. Never paste learner data, secrets, prices, scoring prompts or PRD text: this repository is public."
+      value: "Write this so the assignee can start without reading any other document. Say what must be true and why, and leave how and where in the code to the engineer. State decisions already made as constraints. Never paste learner data, secrets, prices, scoring prompts or PRD text: this repository is public."
   - type: textarea
     id: summary
     attributes:
       label: "Summary"
-      description: "What gets done and why, in one or two sentences."
+      description: "What changes and why it matters, in a few sentences."
     validations:
       required: true
   - type: textarea
     id: background
     attributes:
       label: "Background"
-      description: "Current state with file paths, decisions already made and why."
+      description: "The situation today in terms of behaviour, the decisions already made and why, and the facts and numbers the work depends on."
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
       label: "Scope"
-      description: "What is in scope and what is not."
+      description: "In scope, and out of scope."
     validations:
       required: true
   - type: textarea
     id: specification
     attributes:
       label: "Specification"
-      description: "Approach, files to change, API endpoints (method, route, payload), data and migrations, config. Points of attention: security, performance, compatibility."
+      description: "The requirements and constraints the result must meet. Not file paths, not step-by-step instructions."
     validations:
       required: true
   - type: textarea
     id: acceptance-criteria
     attributes:
       label: "Acceptance criteria"
-      description: "Things someone else can check, one per line."
+      description: "Checks someone else can run and agree on."
       value: |
         - [ ] 
+    validations:
+      required: true
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: "Definition of Done"
+      description: "The closing checklist, adjusted for the ticket type."
+      value: |
+        - [ ] Every acceptance criterion passes on staging (until staging exists: locally or from CI evidence, stated on the ticket)
+        - [ ] Tests added or updated, and CI is green
+        - [ ] PR reviewed, approved and squash-merged into `develop`
+        - [ ] Docs and READMEs updated in the same PR
+        - [ ] No new errors in the staging logs or error tracking after the deploy
+        - [ ] QA has verified it and moved it to Done
     validations:
       required: true
   - type: textarea
     id: test-plan
     attributes:
       label: "Test plan"
-      description: "QA completes this during refinement."
+      description: "A numbered list of scenarios, each with its expected result and whether it is manual or automated. QA completes it during refinement."
       value: |
-        | # | Scenario | Expected result | Manual or automated |
-        |---|---|---|---|
-        | | | | |
+        1. Scenario. Expected: ... (manual or automated)
     validations:
       required: true
   - type: textarea
     id: dependencies
     attributes:
       label: "Dependencies"
-      description: "Tickets that must land first, or that wait on this one."
+      description: "Blocked by, blocks, related."
       value: |
         Blocked by: #
         Blocks: #
@@ -67,4 +79,4 @@ body:
     id: risks
     attributes:
       label: "Risks and gotchas"
-      description: "Risks and their mitigation, open questions, and traps a newcomer would fall into."
+      description: "Risks with their mitigation, open questions, and the traps a newcomer would fall into."
