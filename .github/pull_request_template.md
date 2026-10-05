@@ -1,36 +1,44 @@
-<!--
-Title: <type>(<area>): <ticket title, first letter lowercase>   e.g. feat(api): learner can reset their password by email
-Feature → feat · Bug → fix · Refactor → refactor · Task → ci, build, chore, docs or test · Spike → docs
-Breaking change: add ! before the colon and explain the impact below.
-Keep "Refs". Closes/Fixes/Resolves would close the ticket at merge, before QA tests it.
--->
+### Summary
 
-Refs #
+<!-- One or two sentences: what does this PR do and why?
+     Should mirror the ticket's own Summary. -->
 
-## Summary
+### Related Ticket
 
-<!-- One or two sentences: what this PR does and why. -->
+- Ref #<issue-number></issue>
 
-## Changes made
+### Type of Change
 
--
+- `<type>(<scope>): <short summary>`
 
-## How to test
+### Changes Made
 
-1.
+<!-- Bullet list of what was actually changed, at a glance.
+     Should reflect the ticket's Detailed Description / scope. -->
 
-## Screenshots or evidence
+### Acceptance Criteria
 
-<!-- Required for UI changes: before and after, checked on a narrow mobile screen.
-     Performance or accessibility work: before and after Lighthouse scores. Delete if not applicable. -->
+<!-- Copy the relevant Acceptance Criteria from the ticket and check
+     off each one this PR satisfies. Add any not covered as follow-up notes below. -->
 
-## Notes for the reviewer
+- [ ]
 
-<!-- Trade-offs, risks, follow-up tickets, what you chose not to do. Delete if nothing. -->
+### Screenshots / Visual Evidence
 
-## Checklist
+<!-- Required for UI/UX tickets. For performance/accessibility tickets,
+     attach before/after Lighthouse scores instead. Delete this section
+     if not applicable. -->
 
-- [ ] Tests added or updated for the changed behaviour
-- [ ] Docs and READMEs updated in this PR, or not needed
-- [ ] No secrets, learner data or private product text in the diff, tests or screenshots
-- [ ] Database change: works with the previous release's code
+### Test Plan
+
+<!-- Mirror the ticket's Test Plan table where possible. -->
+
+| # | Scenario | Expected Result | Type (manual/auto) |
+| - | -------- | --------------- | ------------------ |
+| 1 |          |                 |                    |
+| 2 |          |                 |                    |
+
+### Risks & Additional Notes
+
+<!-- Tradeoffs, follow-up tickets, known limitations, anything a reviewer
+     should know. Mirrors the ticket's Risks & Open Points. -->
