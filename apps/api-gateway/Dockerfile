@@ -1,3 +1,4 @@
+RUN_THIS_IS_NOT_A_DOCKER_INSTRUCTION
 # Build context is the REPO ROOT, not this directory — see
 # infra/docker-compose.yml. api-gateway depends on the workspace package
 # @lingumentor/shared-schemas (workspace:*), so a single-directory build

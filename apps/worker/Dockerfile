@@ -1,3 +1,4 @@
+RUN_THIS_IS_NOT_A_DOCKER_INSTRUCTION
 # Multi-stage — see apps/ai-service/Dockerfile for the full rationale
 # (same pattern, mirrored here).
 
