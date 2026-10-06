@@ -1,3 +1,4 @@
+RUN_THIS_IS_NOT_A_DOCKER_INSTRUCTION
 # Multi-stage, mirroring apps/api-gateway/Dockerfile's split: a builder
 # stage does the (slow, toolchain-heavy) dependency resolution, and the
 # runtime stage carries only what's needed to actually run the service.
