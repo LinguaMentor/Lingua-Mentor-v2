@@ -46,6 +46,7 @@ jobs:
               - "apps/api-gateway/**"
               - "packages/**"
               - ".github/workflows/ci-api-gateway.yml"
+              - ".github/workflows/ci-image.yml"
             frontend:
               - *node-root
               - "apps/frontend/**"
@@ -56,11 +57,13 @@ jobs:
               - ".python-version"
               - ".github/workflows/ci.yml"
               - ".github/workflows/ci-ai-service.yml"
+              - ".github/workflows/ci-image.yml"
             worker:
               - "apps/worker/**"
               - ".python-version"
               - ".github/workflows/ci.yml"
               - ".github/workflows/ci-worker.yml"
+              - ".github/workflows/ci-image.yml"
 
   api-gateway:
     needs: changes
@@ -81,6 +84,34 @@ jobs:
     needs: changes
     if: needs.changes.outputs.worker == 'true'
     uses: ./.github/workflows/ci-worker.yml
+
+  # Arm image builds, never pushed; the frontend joins once it has a Dockerfile (#67).
+  image-api-gateway:
+    needs: changes
+    if: needs.changes.outputs.api-gateway == 'true'
+    uses: ./.github/workflows/ci-image.yml
+    with:
+      app: api-gateway
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+
+  image-ai-service:
+    needs: changes
+    if: needs.changes.outputs.ai-service == 'true'
+    uses: ./.github/workflows/ci-image.yml
+    with:
+      app: ai-service
+      context: apps/ai-service
+      dockerfile: apps/ai-service/Dockerfile
+
+  image-worker:
+    needs: changes
+    if: needs.changes.outputs.worker == 'true'
+    uses: ./.github/workflows/ci-image.yml
+    with:
+      app: worker
+      context: apps/worker
+      dockerfile: apps/worker/Dockerfile
 
   # Never path-filtered: a secret can land in any file.
   security:
@@ -158,7 +189,7 @@ jobs:
   ci-gate:
     name: CI gate
     if: always()
-    needs: [changes, api-gateway, frontend, ai-service, worker, security, pr-title, pr-ticket]
+    needs: [changes, api-gateway, frontend, ai-service, worker, image-api-gateway, image-ai-service, image-worker, security, pr-title, pr-ticket]
     runs-on: ubuntu-latest
     steps:
       - name: Check upstream results
