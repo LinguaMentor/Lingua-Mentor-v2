@@ -16,7 +16,7 @@ managed independently.
     packages/
       shared-types/    TS types shared between frontend and api-gateway
       shared-schemas/  zod schemas shared between frontend and api-gateway
-    infra/             docker-compose, Coolify config
+    infra/             docker-compose, staging host setup, Coolify config
     docs/              pointer to the product documents (kept private)
     scripts/           one-off operational scripts
 
