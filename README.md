@@ -42,3 +42,4 @@ pnpm dev:worker        # no port; easy to forget, and queued jobs stall without 
 
 - How we work, and what is being worked on: [LinguaMentor Delivery](https://github.com/orgs/LinguaMentor/projects/2)
 - Product documents: [`docs/prd/`](docs/prd/README.md)
+
