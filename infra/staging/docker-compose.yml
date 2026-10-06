@@ -1,0 +1,89 @@
+# Staging stack for the host setup.sh prepares; how to run it is in README.md.
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # noeviction: BullMQ loses jobs if Redis can drop keys, so a full Redis should fail writes instead.
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    mem_limit: 384m
+
+  api-gateway:
+    image: ${API_GATEWAY_IMAGE:?set in images.env}
+    restart: unless-stopped
+    env_file: /etc/linguamentor/staging.env
+    environment:
+      PORT: "3000"
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_URL: http://ai-service:8000
+      JWT_PUBLIC_KEY_PATH: /app/keys/jwt_public.pem
+      JWT_PRIVATE_KEY_PATH: /app/keys/jwt_private.pem
+    volumes:
+      - /etc/linguamentor/keys:/app/keys:ro
+    # 3001 is the API and 3000 the web app, same as the tunnel config in setup.sh.
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # node:24-slim has no curl or wget.
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    mem_limit: 512m
+
+  ai-service:
+    image: ${AI_SERVICE_IMAGE:?set in images.env}
+    restart: unless-stopped
+    env_file: /etc/linguamentor/staging.env
+    environment:
+      REDIS_URL: redis://redis:6379
+      JWT_PUBLIC_KEY_PATH: /app/keys/jwt_public.pem
+    volumes:
+      # Verify-only service: it gets the public key, never the private one.
+      - /etc/linguamentor/keys/jwt_public.pem:/app/keys/jwt_public.pem:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    mem_limit: 1024m
+
+  worker:
+    image: ${WORKER_IMAGE:?set in images.env}
+    restart: unless-stopped
+    env_file: /etc/linguamentor/staging.env
+    environment:
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_URL: http://ai-service:8000
+    depends_on:
+      redis:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    mem_limit: 768m
+
+  web:
+    image: ${WEB_IMAGE:?set in images.env}
+    restart: unless-stopped
+    # Loopback only: cloudflared on the host is the one way in.
+    ports:
+      - "127.0.0.1:3000:3000"
+    mem_limit: 512m
+
+volumes:
+  redis-data:
