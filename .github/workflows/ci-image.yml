@@ -1,0 +1,41 @@
+name: CI - image
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: App name, also the cache scope
+        required: true
+        type: string
+      context:
+        description: Docker build context
+        required: true
+        type: string
+      dockerfile:
+        description: Dockerfile path
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Image
+    # Servers are Arm; a native runner avoids slow emulation.
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          platforms: linux/arm64
+          push: false
+          # Same scope name as #70 will use, so its builds can warm this cache.
+          cache-from: type=gha,scope=${{ inputs.app }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.app }}
