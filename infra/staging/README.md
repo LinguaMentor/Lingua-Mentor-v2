@@ -20,7 +20,14 @@ These survive a server rebuild. The tunnel must be created with `cloudflared tun
 
 ## Build the host
 
-Reach the server through an Oracle Bastion port-forwarding session (port 22, user `ubuntu`), copy this folder and the tunnel credentials over, then:
+Create the server in the app subnet with your admin SSH key, then open an Oracle Bastion port-forwarding session to its private IP on port 22 (Console, or `oci bastion session create-port-forwarding`). Forward it and copy this folder and the tunnel credentials over:
+
+```bash
+ssh -N -L 2222:<private ip>:22 -i <admin key> <session ocid>@host.bastion.<region>.oci.oraclecloud.com
+scp -P 2222 -i <admin key> setup.sh docker-compose.yml <tunnel uuid>.json ubuntu@127.0.0.1:
+```
+
+Then on the server:
 
 ```bash
 sudo DOMAIN=<domain> TUNNEL_ID=<tunnel uuid> \
@@ -29,7 +36,7 @@ sudo DOMAIN=<domain> TUNNEL_ID=<tunnel uuid> \
      ./setup.sh
 ```
 
-Running it again changes nothing unless an input changed, so it is also how you rotate the CI key. It prints the server's SSH host key at the end. Store that line in the GitHub `staging` environment; a rebuild creates a new key and the secret must be updated.
+A rebuild from nothing (new server, script, secrets, host key) took under 3 minutes, about 75 seconds of it in the script. Running it again changes nothing unless an input changed, so it is also how you rotate the CI key. It prints the server's SSH host key at the end. Store that line in the GitHub `staging` environment; a rebuild creates a new key and the secret must be updated.
 
 ## Run the stack
 
@@ -49,7 +56,7 @@ The `deploy` user can run Docker, which is root-equivalent, so the secrets file 
 
 ## If the tunnel or Docker is down
 
-Use the Bastion session as `ubuntu` (key-only, outside the tunnel). The Oracle serial console is the last resort.
+Open a new Bastion session and forward it as above, then `ssh -p 2222 -i <admin key> ubuntu@127.0.0.1` (key-only, outside the tunnel). The Oracle serial console is the last resort.
 
 ## Upgrading cloudflared
 
