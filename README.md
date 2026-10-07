@@ -22,21 +22,50 @@ managed independently.
 
 ## Getting started
 
-1. Copy every `.env.example` in `apps/*` to `.env` and fill in real values.
-2. `pnpm install` at the repo root (installs frontend + api-gateway + packages).
-3. For ai-service and worker: `cd apps/ai-service && poetry install` (repeat for `worker/`).
-4. `docker compose -f infra/docker-compose.yml up -d redis` to start Redis.
+Docker Engine with Docker Compose v2 is enough to run the backend stack locally. Compose supplies its own database, Redis, and service URLs; it does not read the app `.env` files or need Neon credentials.
 
 ## Running locally
 
-Anything that goes through the queue (writing evaluation, appeals, daily sessions) needs all four processes:
+### Full stack with Compose
+
+From the repository root:
+
+```bash
+docker compose -f infra/docker-compose.yml up --build -d
+```
+
+Compose starts PostgreSQL 18, Redis, the API gateway, AI service, and worker. It generates development JWT keys in a named volume and applies Alembic migrations before starting the apps. The first run builds the images; later starts reuse them.
+
+Check service status and logs:
+
+```bash
+docker compose -f infra/docker-compose.yml ps
+docker compose -f infra/docker-compose.yml logs -f
+```
+
+The gateway, AI service, Postgres, and Redis are available on `127.0.0.1` at ports `3000`, `8000`, `5432`, and `6379`. Stop the stack with `docker compose -f infra/docker-compose.yml down`. To remove the database, Redis data, and generated development keys as well, use `docker compose -f infra/docker-compose.yml down -v`.
+
+### Separate processes for hot reload
+
+Install the app dependencies first: `pnpm install`, then `poetry install` in both `apps/ai-service` and `apps/worker`. Start the local database, Redis, and migrations:
+
+```bash
+docker compose -f infra/docker-compose.yml up --build -d postgres redis migrate
+bash scripts/generate-jwt-keys.sh
+```
+
+Set the database and service URLs in each app's `.env` for host-run processes. Use `postgresql://linguamentor:linguamentor@localhost:5432/linguamentor` for `DATABASE_URL`, `redis://localhost:6379` for `REDIS_URL`, and `http://localhost:8000` for `AI_SERVICE_URL`. The gateway and worker need the AI service URL; the other values apply where those variables are used. These host URLs are different from Compose's service-name URLs.
+
+Run these commands in separate terminals:
 
 ```bash
 pnpm dev:frontend      # :3001
 pnpm dev:api-gateway   # :3000
 pnpm dev:ai-service    # :8000
-pnpm dev:worker        # no port; easy to forget, and queued jobs stall without it
+pnpm dev:worker
 ```
+
+Queue-backed features need the gateway, AI service, and worker running together.
 
 ## Working on the project
 

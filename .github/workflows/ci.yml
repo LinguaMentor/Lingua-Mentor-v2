@@ -26,6 +26,7 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       ai-service: ${{ steps.filter.outputs.ai-service }}
       worker: ${{ steps.filter.outputs.worker }}
+      local-compose: ${{ steps.filter.outputs.local-compose }}
     steps:
       # Toolchain and CI files count too, so changing how a service is built
       # re-verifies it even when none of its source changed.
@@ -64,6 +65,17 @@ jobs:
               - ".github/workflows/ci.yml"
               - ".github/workflows/ci-worker.yml"
               - ".github/workflows/ci-image.yml"
+            local-compose:
+              - "infra/docker-compose.yml"
+              - "scripts/test-local-compose.sh"
+              - "apps/api-gateway/**"
+              - "apps/ai-service/**"
+              - "apps/worker/**"
+              - "packages/shared-schemas/**"
+              - "package.json"
+              - "pnpm-lock.yaml"
+              - "pnpm-workspace.yaml"
+              - ".github/workflows/ci.yml"
 
   api-gateway:
     needs: changes
@@ -112,6 +124,15 @@ jobs:
       app: worker
       context: apps/worker
       dockerfile: apps/worker/Dockerfile
+
+  local-compose:
+    needs: changes
+    if: needs.changes.outputs.local-compose == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run local Compose smoke test
+        run: bash scripts/test-local-compose.sh
 
   # Never path-filtered: a secret can land in any file.
   security:
@@ -189,7 +210,21 @@ jobs:
   ci-gate:
     name: CI gate
     if: always()
-    needs: [changes, api-gateway, frontend, ai-service, worker, image-api-gateway, image-ai-service, image-worker, security, pr-title, pr-ticket]
+    needs:
+      [
+        changes,
+        api-gateway,
+        frontend,
+        ai-service,
+        worker,
+        image-api-gateway,
+        image-ai-service,
+        image-worker,
+        local-compose,
+        security,
+        pr-title,
+        pr-ticket,
+      ]
     runs-on: ubuntu-latest
     steps:
       - name: Check upstream results

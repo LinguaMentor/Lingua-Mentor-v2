@@ -1,22 +1,29 @@
-# Local development compose file.
-# Postgres is NOT included here — connect to a Neon dev branch instead,
-# per deployment patch §3.1 (Neon branching also gives you free per-feature DB branches locally).
-#
-# Resource limits (mem_limit/cpus) mirror docker-compose.prod.yml's sizing
-# for a Hetzner CX 4vCPU/8GB box (ADR 0001 §2.1) even though this file runs
-# on a dev machine, not the VPS — keeping the two in parity means a local
-# run surfaces a memory regression before it ever reaches prod, rather than
-# local dev having a silently more generous ceiling than what's deployed.
 services:
-  # restart: unless-stopped on every service — a container that dies to a
-  # host OOM event (observed on this machine: Redis was killed mid-session
-  # with no graceful shutdown in its own log) comes back on its own instead
-  # of silently leaving the stack half-up until someone notices.
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: linguamentor
+      POSTGRES_USER: linguamentor
+      POSTGRES_PASSWORD: linguamentor
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linguamentor -d linguamentor"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    mem_limit: 512m
+    cpus: 0.5
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -25,10 +32,41 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
-    # Lightest of the four — in-memory KV + AOF write, no request parsing
-    # or LLM-adjacent work.
     mem_limit: 512m
     cpus: 0.5
+
+  jwt-key-init:
+    image: node:24-slim
+    restart: "no"
+    command:
+      - node
+      - -e
+      - |
+        const { generateKeyPairSync } = require('node:crypto');
+        const { existsSync, writeFileSync } = require('node:fs');
+        const privatePath = '/keys/jwt_private.pem';
+        const publicPath = '/keys/jwt_public.pem';
+        if (!existsSync(privatePath) || !existsSync(publicPath)) {
+          const keys = generateKeyPairSync('rsa', {
+            modulusLength: 2048,
+            publicKeyEncoding: { type: 'spki', format: 'pem' },
+            privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+          });
+          writeFileSync(privatePath, keys.privateKey, { mode: 0o600 });
+          writeFileSync(publicPath, keys.publicKey, { mode: 0o644 });
+        }
+    volumes:
+      - jwt-keys:/keys
+
+  migrate:
+    build: ../apps/ai-service
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://linguamentor:linguamentor@postgres:5432/linguamentor
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   api-gateway:
     # Root context, not ../apps/api-gateway — it depends on the workspace
@@ -38,16 +76,28 @@ services:
       context: ..
       dockerfile: apps/api-gateway/Dockerfile
     restart: unless-stopped
-    env_file: ../apps/api-gateway/.env
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://linguamentor:linguamentor@postgres:5432/linguamentor
+      REDIS_URL: redis://redis:6379
+      JWT_PUBLIC_KEY_PATH: ./keys/jwt_public.pem
+      JWT_PRIVATE_KEY_PATH: ./keys/jwt_private.pem
+      ENFORCE_CALIBRATION_GATE: "false"
+      AI_SERVICE_URL: http://ai-service:8000
+      CORS_ORIGINS: http://localhost:3001
     volumes:
-      # JWT keys (scripts/generate-jwt-keys.sh) are mounted, never baked
-      # into the image.
-      - ../apps/api-gateway/keys:/app/keys:ro
+      - jwt-keys:/app/keys:ro
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
+      jwt-key-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       # No curl/wget in node:24-slim (verified) — node's own http client is
       # already on PATH, so this avoids installing a package into the
@@ -65,12 +115,24 @@ services:
   ai-service:
     build: ../apps/ai-service
     restart: unless-stopped
-    env_file: ../apps/ai-service/.env
+    environment:
+      DATABASE_URL: postgresql://linguamentor:linguamentor@postgres:5432/linguamentor
+      REDIS_URL: redis://redis:6379
+      JWT_PUBLIC_KEY_PATH: ./keys/jwt_public.pem
+      GROQ_API_KEY: ""
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - jwt-keys:/app/keys:ro
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
+      jwt-key-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       # Matches the HEALTHCHECK baked into apps/ai-service/Dockerfile —
       # declared explicitly here too so `depends_on: condition:
@@ -89,13 +151,17 @@ services:
   worker:
     build: ../apps/worker
     restart: unless-stopped
-    env_file: ../apps/worker/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://linguamentor:linguamentor@postgres:5432/linguamentor
+      AI_SERVICE_URL: http://ai-service:8000
     depends_on:
-      # Not just "started" — a worker that starts pulling jobs off Redis
-      # before ai-service can actually serve /api/v1/* yet will fail its
-      # first evaluation calls and dead-letter or retry-storm real jobs.
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       ai-service:
         condition: service_healthy
     # No healthcheck: block here — worker has no HTTP surface to probe.
@@ -107,4 +173,6 @@ services:
     cpus: 1.0
 
 volumes:
+  postgres-data:
   redis-data:
+  jwt-keys:
