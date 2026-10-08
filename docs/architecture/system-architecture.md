@@ -45,7 +45,7 @@ The PRD gives targets for paying users, not for load, so the load figures below 
 ### 2.2 Where it saturates first
 
 1. **Neon compute** on the free plan. Production moves to the paid Launch plan before real users, where compute autoscales.
-2. **VM memory.** Only three processes have been measured, at idle (section 3).
+2. **VM memory.** Redis, the tunnel connector and the gateway were measured together: 722 MB idle and 897 MB under load on a 6 GB server (section 3). The other processes are still unmeasured.
 3. **Scoring throughput.** With 10 concurrent scoring jobs and an assumed 25 seconds per evaluation, the worker handles 20 to 30 essays a minute, 3 to 4 times the peak estimate.
 4. **OpenAI rate limits are not the constraint.** The Build tier, reached after $5 of credit, allows 5,000 requests and 1,000,000 tokens per minute on the flagship models ([OpenAI](https://developers.openai.com/api/docs/guides/rate-limits)). That is about 100 essays a minute at the estimate above.
 
@@ -99,9 +99,9 @@ What is not cheap: leaving Neon, or making Redis highly available. Neither is ex
 | worker | TypeScript | Queue consumer, same image as api | nothing | not measured |
 | scoring | Python | Scoring engines, calibration code path | api and worker only | 47 MB (current ai-service, app imported) |
 | redis | | Queues and rate-limit counters | api and worker only | not measured |
-| cloudflared | | Tunnel connector | outbound only | not measured |
+| cloudflared | | Tunnel connector, a host service (not a container) | outbound only | measured with redis and api: 722 MB idle, 897 MB under load, whole host |
 
-Idle figures are floors. Each app VM has 6 GB (section 17), and we record real numbers on the first staging deploy.
+Idle figures are floors. `cloudflared` runs as a pinned systemd service on the host, so a Docker failure cannot lock the team out. Staging runs on 4 GB and production is sized after staging's week of measurements (section 17.7).
 
 ---
 
@@ -461,7 +461,7 @@ OWASP treats SameSite as defence in depth, not a replacement for CSRF protection
 - **Timeouts everywhere.** Every outbound call has an `AbortSignal` timeout; the api's timeout for scoring calls exceeds the scoring service's model timeout.
 - **Keyset pagination** for lists.
 - **Health:** `/api/v1/health/live` checks only the process. `/api/v1/health/ready` checks dependencies and runs at deploy time.
-- **Streaming (Phase 2 chat):** POST-based server-sent events through the framework's reply object, the request's abort signal passed upstream, and a heartbeat every 15 seconds. Cloudflare's proxy read timeout is 125 seconds on Free ([Cloudflare](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/)). Buffering is tested on staging first.
+- **Streaming (Phase 2 chat):** POST-based server-sent events through the framework's reply object, the request's abort signal passed upstream, and the first byte sent at once, and a heartbeat every 15 seconds. Measured on Cloudflare Free: heartbeats every 15 or 60 seconds delivered every event at most half a second late, and a silence of 125 seconds or more was cut, before the first byte and mid-stream, so the rule is a first byte immediately and never more than 30 seconds of silence ([Cloudflare](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/)).
 
 ---
 
@@ -517,8 +517,9 @@ The Paystack details come from secondary sources because its documentation block
  all app containers -> Bugsink (Oracle private network)
 ```
 
-- No VM accepts inbound connections from the internet; `cloudflared` dials out.
-- SSH goes through Cloudflare Access; CI uses a service token with `cloudflared access ssh` (confirmed on staging).
+- No VM accepts inbound connections from the internet; `cloudflared` dials out. A full TCP scan of the staging server found nothing open.
+- Every opened port needs two rules: Oracle's network rule and the host firewall, because Oracle's Ubuntu images end their firewall with a reject rule.
+- SSH goes through Cloudflare Access; CI uses a service token with `cloudflared access ssh`, a pinned host key and a pinned connector version (measured on staging: about 4 seconds round trip). Break-glass access when the tunnel is down is an Oracle Bastion session, then the serial console.
 - Tailscale is not used; its free plan is non-commercial ([pricing](https://tailscale.com/pricing)).
 
 ### 15.2 Threats and controls
@@ -564,7 +565,7 @@ Essays are never added to a calibration or training set without a separate, with
 
 ## 16. Observability and operations
 
-- **Error tracking: Bugsink, self-hosted.** It accepts the official Sentry SDKs ([Bugsink](https://www.bugsink.com/connect-any-application/)), runs as one container on SQLite, and its self-hosted edition is free with unlimited users. Its licence is PolyForm Shield 1.0.0, which permits any use except building a product that competes with Bugsink. It runs on one of Oracle's two Always Free AMD VMs (VM.Standard.E2.1.Micro: 1/8 OCPU with burst, 1 GB) ([Oracle](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)), so it survives an app VM failure and uses none of the Arm allowance.
+- **Error tracking: Bugsink, self-hosted.** It accepts the official Sentry SDKs ([Bugsink](https://www.bugsink.com/connect-any-application/)), is installed directly on the VM and runs on SQLite (its documentation advises against SQLite on Docker volumes), and its self-hosted edition is free with unlimited users. Its licence is PolyForm Shield 1.0.0, which permits any use except building a product that competes with Bugsink. It runs on one of Oracle's two Always Free AMD VMs (VM.Standard.E2.1.Micro: 1/8 OCPU with burst, 1 GB) ([Oracle](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)), so it survives an app VM failure and uses none of the Arm allowance. Measured: 1,000 stored events peaked at 327 MB with no out-of-memory kill. It accepts but silently drops events beyond 1,000 per 5 minutes per project, so a quiet dashboard does not prove a healthy system; the uptime check covers outages.
   - **Ingestion:** server-side SDKs (api, worker, scoring, the Next.js server) send over Oracle's private network. Browsers send to `/api/v1/monitoring/envelope` on our own origin using the SDK's tunnel option, and the api forwards only envelopes whose project id is on an allow-list, as Sentry's docs require to avoid an open proxy ([Sentry](https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#using-the-tunnel-option)).
   - **UI:** `errors.<domain>` behind Cloudflare Access, open to the whole team.
   - **Fallback:** GlitchTip (MIT licence) takes the same SDKs, so switching means changing the DSN. It needs PostgreSQL and 256 to 512 MB ([GlitchTip](https://glitchtip.com/documentation/install)), which makes it the heavier option on a 1 GB VM.
@@ -575,7 +576,7 @@ Essays are never added to a calibration or training set without a separate, with
 - **Alerts** (PRD §11.7): queue backlog and oldest-job age, failed jobs, AI error rate, sweeper and backup heartbeats, Neon compute-hours remaining, OpenAI spend.
 - **SLO.** 99.5% monthly availability, about 3.6 hours of downtime a month. No redundancy before launch.
 - **Time to result.** The PRD's 6-second P95 dates from a very fast provider; we measure on the pinned model, then set the target.
-- **VMs are rebuildable.** All state is in Neon, R2 and disposable Redis. `infra/vm/bootstrap.sh` rebuilds a VM, and the drill times it.
+- **VMs are rebuildable.** All state is in Neon, R2 and disposable Redis. The setup script under `infra/staging/` rebuilds a VM, and the drill times it.
 - **Runbooks before launch:** incident response, Postgres restore, VM rebuild, secret rotation, release rollback, idle-VM reclaim.
 - **Cost guardrails:** a $1 Oracle budget alert, OpenAI hard limits, Neon usage alerts.
 
@@ -601,10 +602,12 @@ Production data never leaves production (PRD §11.10).
 
 | Machine | Shape | Runs |
 |---|---|---|
-| prod-app | Arm, 1 OCPU, 6 GB | web, api, worker, scoring, redis, cloudflared |
-| staging-app | Arm, 1 OCPU, 6 GB | the same, for staging |
-| monitoring | AMD micro, 1 GB | Bugsink, cloudflared |
+| prod-app | Arm, 1 OCPU, 6 GB (final size set by the sizing gate) | web, api, worker, scoring, redis, cloudflared |
+| staging-app | Arm, 1 OCPU, 4 GB | the same, for staging |
+| monitoring | AMD micro, 1 GB | Bugsink (installed directly), cloudflared |
 | spare | AMD micro, 1 GB | nothing yet |
+
+Small AMD servers exist in only one availability domain of the region. The Arm quotas that apply are the regional ones, not the figures in Oracle's documentation, so the compartment carries an Always Free quota before any server exists.
 
 ### 17.3 Standards
 1. Environments are isolated, each with its own database, Redis, secrets and keys.
@@ -632,7 +635,7 @@ Compose over SSH through the tunnel. A restart takes seconds; chat streams recon
 | Need | Choice | Free limit | Catch |
 |---|---|---|---|
 | CI, registry, approvals | GitHub, public repository | Actions, public GHCR packages and environment approvals free | Free only while public. The private content repository gets 2,000 Actions minutes a month, enough for bundle builds |
-| App VMs | Oracle Always Free, Arm | 2 OCPU and 12 GB total, 200 GB disk, 10 TB/month out | Idle reclaim risk; allowance cut from 4 OCPU and 24 GB in June 2026; card required; home region permanent |
+| App VMs | Oracle Always Free, Arm | 2 OCPU and 12 GB total, 200 GB disk, 10 TB/month out | Idle reclaim risk (see 17.7); allowance cut from 4 OCPU and 24 GB in June 2026; card required; home region permanent |
 | Monitoring VM | Oracle Always Free, AMD micro | Two VMs of 1/8 OCPU and 1 GB | Small; Bugsink only |
 | Database | Neon Free | 0.5 GB, 100 CU-hours a month, 6-hour history | Compute stops when hours run out; idle free projects deleted after 90 days from 2026-10-05 |
 | Edge, tunnel, Access | Cloudflare Free | Zero Trust free to 50 users (search snippet) | 125-second proxy read timeout |
@@ -652,11 +655,15 @@ One registered domain, with Cloudflare nameservers. Start on a free DigitalPlat 
 | `staging.<domain>` | Staging | Cloudflare Access |
 | `errors.<domain>` | Bugsink UI | Cloudflare Access |
 | `ssh-prod.`, `ssh-staging.`, `ssh-mon.<domain>` | Deploy and admin SSH | Cloudflare Access |
+
+Hostnames have exactly one label under the domain, because Cloudflare's free certificate covers one level.
 | `mail.<domain>` | Resend sending domain | DNS only |
 | `<domain>`, `www.<domain>` | Landing page | Public |
 
-### 17.7 Sizing gate
-After the first staging deploy we record memory and CPU per container. Above 70% memory or under sustained CPU load, we investigate, then rebalance the flexible Arm shape (for example 8 GB production, 4 GB staging) before paying for anything.
+### 17.7 Sizing gate and idle reclamation
+After the first staging deploy we record memory and CPU per container. Above 70% memory or under sustained CPU load, we investigate, then rebalance the flexible Arm shape before paying for anything.
+
+Oracle treats an Always Free Arm server as idle when CPU (95th percentile), network and memory are all under 20% for 7 days, and may then reclaim it ([Oracle](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)). The base stack alone sits at 12 to 15% of 6 GB, under that line. Decision: staging runs on 4 GB so the full stack stays above it, and Oracle's own memory metric is read over 7 days to confirm. We add no keep-alive load. Production upgrades the account to Pay As You Go before launch and asks Oracle in writing whether that exempts it. We plan as if a reclaimed server is deleted: rebuild from the setup script (163 seconds measured from nothing), or move the Compose stack to another Arm host; state lives outside the servers.
 
 ---
 
@@ -707,7 +714,7 @@ This is the platform build order, not the feature roadmap.
 **A0. Decisions and spikes.**
 - Frank accepts or amends the Proposed decisions in section 4.
 - **S1, scoring service contract (2 days, AI engineer or backend):** the stateless `/score` endpoint with OpenAI structured output on a fixture, the generated TypeScript client, and a worker job calling it. Exit when the round trip works end to end with the fake and one real call, and memory and latency are recorded.
-- **S2, Oracle VMs (1 day, DevOps):** provision the Arm and AMD VMs, run cloudflared, Redis, a hello container and Bugsink; confirm path routing, Access, the private network and a streamed response through Cloudflare.
+- **S2, Oracle VMs (1 day, DevOps), done:** provision the Arm and AMD VMs, run cloudflared, Redis, a hello container and Bugsink; confirm path routing, Access, the private network and a streamed response through Cloudflare.
 
 **A1. Foundation.** Move the worker into `api-gateway`; strip the database from `ai-service`; fresh Kysely initial migration with the scoring-integrity model; platform layer; `packages/contracts`; private content repository and bundle pipeline; CI with Postgres and Redis on Arm, OpenAPI drift, module boundaries and formatting; `CODEOWNERS`; licence file.
 
@@ -731,12 +738,14 @@ This is the platform build order, not the feature roadmap.
 
 ## 22. Not verified, and open questions
 
-- Memory and CPU of web, worker, redis, cloudflared and Bugsink, and of everything under load. Only three idle figures exist.
-- Bugsink's memory on a 1 GB VM under our event volume; its documentation gives no hardware figure. S2 measures it.
-- Whether Pay-As-You-Go stops Oracle reclaiming idle VMs or keeps the old Arm allowance (secondary sources).
+- Memory and CPU of web, worker and scoring, and of the full stack under load. Redis, the tunnel connector and the gateway are measured together (722 and 897 MB); Bugsink is measured (327 MB peak at 1,000 events).
+- Whether Pay-As-You-Go stops Oracle reclaiming idle VMs, or keeps the old Arm allowance. No official Oracle page says so; production asks Oracle in writing.
+- Whether Oracle stops or deletes a reclaimed server. We plan as if deleted.
+- Oracle's idle-account rule (30 days) and how it applies to a paid account.
+- Whether UDP is exposed beyond the top 100 ports, which the staging scan covered.
+- Email from Oracle to our team: it blocks outbound port 25 by default, so error notifications use a provider reachable over standard web or submission ports.
 - Whether an idle connection prevents Neon from suspending.
-- Cloudflare's buffering of server-sent events, the Zero Trust 50-user figure, and how traffic spreads across several tunnel connectors.
-- SSH through Cloudflare Access with a service token from GitHub Actions.
+- The Zero Trust 50-user figure, and how traffic spreads across several tunnel connectors.
 - Paystack's webhook details, and whether payment providers accept a free domain.
 - DigitalPlat's renewal terms.
 - kysely-codegen's maintenance outlook.
