@@ -14,8 +14,9 @@ tests/
 # rule api-gateway's Dockerfile already follows for its JWT keys.
 .env
 .env.*
-!.env.example
 keys/
+*.pem
+*.key
 
 .git/
 README.md

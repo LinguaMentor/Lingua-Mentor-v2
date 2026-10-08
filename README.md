@@ -22,7 +22,7 @@ managed independently.
 
 ## Getting started
 
-Docker Engine with Docker Compose v2 is enough to run the backend stack locally. Compose supplies its own database, Redis, and service URLs; it does not read the app `.env` files or need Neon credentials.
+Docker Engine with Docker Compose v2 is enough to run the full stack locally. Compose supplies its own database, Redis, and service URLs; it does not read the app `.env` files or need Neon credentials.
 
 ## Running locally
 
@@ -34,7 +34,7 @@ From the repository root:
 docker compose -f infra/docker-compose.yml up --build -d
 ```
 
-Compose starts PostgreSQL 18, Redis, the API gateway, AI service, and worker. It generates development JWT keys in a named volume and applies Alembic migrations before starting the apps. The first run builds the images; later starts reuse them.
+Compose starts PostgreSQL 18, Redis, the API gateway, AI service, worker, and the web app. It generates development JWT keys in a named volume and applies Alembic migrations before starting the apps. The first run builds the images; later starts reuse them.
 
 Check service status and logs:
 
@@ -43,7 +43,7 @@ docker compose -f infra/docker-compose.yml ps
 docker compose -f infra/docker-compose.yml logs -f
 ```
 
-The gateway, AI service, Postgres, and Redis are available on `127.0.0.1` at ports `3000`, `8000`, `5432`, and `6379`. Stop the stack with `docker compose -f infra/docker-compose.yml down`. To remove the database, Redis data, and generated development keys as well, use `docker compose -f infra/docker-compose.yml down -v`.
+The web app, gateway, AI service, Postgres, and Redis are available on `127.0.0.1` at ports `3001`, `3000`, `8000`, `5432`, and `6379`. The pages in the browser call the gateway at `http://localhost:3000`, not at the Compose service name. Stop the stack with `docker compose -f infra/docker-compose.yml down`. To remove the database, Redis data, and generated development keys as well, use `docker compose -f infra/docker-compose.yml down -v`.
 
 ### Separate processes for hot reload
 
@@ -65,7 +65,7 @@ pnpm dev:ai-service    # :8000
 pnpm dev:worker
 ```
 
-Queue-backed features need the gateway, AI service, and worker running together.
+Queue-backed features need the gateway, AI service, and worker running together. The Compose web service is a production image; use `pnpm dev:frontend` when you want hot reload.
 
 ## Working on the project
 

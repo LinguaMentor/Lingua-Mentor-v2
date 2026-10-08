@@ -9,7 +9,9 @@ tests/
 
 .env
 .env.*
-!.env.example
+keys/
+*.pem
+*.key
 
 .git/
 README.md
