@@ -1,0 +1,27 @@
+# Applies to every image whose build context is the repo root (api-gateway
+# and frontend). Per-app Python images use their own .dockerignore next to
+# the Dockerfile. Secrets and keys stay out of every build context.
+.env
+.env.*
+**/.env
+**/.env.*
+keys/
+**/keys/
+*.pem
+*.key
+**/*.pem
+**/*.key
+
+.git/
+.github/
+docs/
+infra/
+apps/ai-service/
+apps/worker/
+**/node_modules/
+**/.next/
+**/dist/
+**/.venv/
+**/coverage/
+**/.turbo/
+*.md

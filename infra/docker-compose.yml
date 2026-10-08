@@ -172,6 +172,31 @@ services:
     mem_limit: 768m
     cpus: 1.0
 
+  web:
+    # Root context: frontend depends on @lingumentor/shared-schemas.
+    build:
+      context: ..
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        # The browser runs on the host, so this is localhost, not "api-gateway".
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3000
+        NEXT_PUBLIC_WS_VOICE_URL: ws://localhost:3000/voice
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      # node:24-slim has no curl/wget; same probe style as api-gateway.
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    mem_limit: 512m
+    cpus: 1.0
+
 volumes:
   postgres-data:
   redis-data:

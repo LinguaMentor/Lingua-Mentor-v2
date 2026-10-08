@@ -18,7 +18,9 @@ services:
   api-gateway:
     image: ${API_GATEWAY_IMAGE:?set in images.env}
     restart: unless-stopped
-    env_file: /etc/linguamentor/staging.env
+    env_file:
+      - path: /etc/linguamentor/staging.env
+        required: false
     environment:
       PORT: "3000"
       REDIS_URL: redis://redis:6379
@@ -45,7 +47,9 @@ services:
   ai-service:
     image: ${AI_SERVICE_IMAGE:?set in images.env}
     restart: unless-stopped
-    env_file: /etc/linguamentor/staging.env
+    env_file:
+      - path: /etc/linguamentor/staging.env
+        required: false
     environment:
       REDIS_URL: redis://redis:6379
       JWT_PUBLIC_KEY_PATH: /app/keys/jwt_public.pem
@@ -66,7 +70,9 @@ services:
   worker:
     image: ${WORKER_IMAGE:?set in images.env}
     restart: unless-stopped
-    env_file: /etc/linguamentor/staging.env
+    env_file:
+      - path: /etc/linguamentor/staging.env
+        required: false
     environment:
       REDIS_URL: redis://redis:6379
       AI_SERVICE_URL: http://ai-service:8000
@@ -80,9 +86,18 @@ services:
   web:
     image: ${WEB_IMAGE:?set in images.env}
     restart: unless-stopped
+    environment:
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
     # Loopback only: cloudflared on the host is the one way in.
     ports:
       - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
     mem_limit: 512m
 
 volumes:
