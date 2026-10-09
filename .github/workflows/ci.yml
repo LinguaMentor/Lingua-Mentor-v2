@@ -28,6 +28,7 @@ jobs:
       worker: ${{ steps.filter.outputs.worker }}
       local-compose: ${{ steps.filter.outputs.local-compose }}
       staging-compose: ${{ steps.filter.outputs.staging-compose }}
+      smoke-test: ${{ steps.filter.outputs.smoke-test }}
     steps:
       # Toolchain and CI files count too, so changing how a service is built
       # re-verifies it even when none of its source changed.
@@ -84,6 +85,10 @@ jobs:
               - ".github/workflows/ci.yml"
             staging-compose:
               - "infra/staging/docker-compose.yml"
+              - ".github/workflows/ci.yml"
+            smoke-test:
+              - "scripts/smoke-test*.mjs"
+              - ".nvmrc"
               - ".github/workflows/ci.yml"
 
   api-gateway:
@@ -165,6 +170,18 @@ jobs:
           WORKER_IMAGE: placeholder:worker
           WEB_IMAGE: placeholder:web
         run: docker compose -f infra/staging/docker-compose.yml config --quiet
+
+  smoke-test:
+    needs: changes
+    if: needs.changes.outputs.smoke-test == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+      - name: Test the post-deploy smoke test
+        run: node --test scripts/smoke-test.test.mjs
 
   # Never path-filtered: a secret can land in any file.
   security:
@@ -255,6 +272,7 @@ jobs:
         image-frontend,
         local-compose,
         staging-compose,
+        smoke-test,
         security,
         pr-title,
         pr-ticket,
