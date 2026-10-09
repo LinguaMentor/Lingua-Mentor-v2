@@ -12,6 +12,7 @@ These survive a server rebuild. The tunnel must be created with `cloudflared tun
 - Proxied CNAMEs `staging` and `ssh-staging` pointing at `<tunnel id>.cfargotunnel.com`. Both are one label under the domain, because the free certificate covers one level.
 - An Access application for `staging.<domain>` with an Allow policy for the team's emails.
 - An Access application for `ssh-staging.<domain>` with an Allow policy for the team and a Service Auth policy for the CI service token.
+- A Service Auth policy on the `staging.<domain>` application too, so the smoke test can reach the API from CI (see "Smoke test").
 
 ## Network rules (Oracle)
 
@@ -40,7 +41,7 @@ A rebuild from nothing (new server, script, secrets, host key) took under 3 minu
 
 ## Run the stack
 
-Until #70 does this on every merge:
+Until #70 does this on every merge (keep the file you replace as `images.env.previous` first, which the [rollback](rollback.md) relies on):
 
 1. Put the app secrets in `/etc/linguamentor/staging.env` and the JWT keys in `/etc/linguamentor/keys/` (owned by `deploy`, not world-readable).
 2. Write `/opt/linguamentor/staging/images.env` with `API_GATEWAY_IMAGE`, `AI_SERVICE_IMAGE`, `WORKER_IMAGE` and `WEB_IMAGE`.
@@ -68,6 +69,34 @@ The `deploy` user can run Docker, which is root-equivalent, so the secrets file 
 - From outside: `nmap -Pn -p- <public ip>` finds nothing open (add `-sU --top-ports 100` for UDP).
 - `https://staging.<domain>` shows the Access login, then the app. `/api/` reaches the gateway.
 - CI reaches the server with `cloudflared access ssh` and the service token; a plain `ssh` to the public IP times out.
+
+## Smoke test
+
+`scripts/smoke-test.mjs` checks a deployed stack the way a learner would use it: the API reports ready, a throwaway account registers and logs in, one essay goes through scoring to a finished result, and the account is erased. It needs only Node 24 and exits non-zero on the first failure, so a deploy workflow can fail on it.
+
+```bash
+SMOKE_BASE_URL=https://staging.<domain> \
+CF_ACCESS_CLIENT_ID=<service token id> CF_ACCESS_CLIENT_SECRET=<service token secret> \
+  node scripts/smoke-test.mjs
+```
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `SMOKE_BASE_URL` | required | Origin of the stack, as the browser would see it |
+| `SMOKE_READY_PATH` | `/api/v1/health/ready` | The readiness endpoint; it checks the database and Redis. The backend adds it; until then readiness fails |
+| `SMOKE_READY_WAIT_SECONDS` | `30` | How long to keep retrying readiness after a deploy |
+| `SMOKE_WRITING_WAIT_SECONDS` | `120` | How long to wait for the essay to be scored |
+| `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | none | Cloudflare Access service token, needed when the hostname sits behind Access |
+
+The account is `smoke-<time>-<random>@smoke.invalid`, created for the run and erased at the end even when a step failed. Erasure clears the essay and its feedback and anonymises the user row. If the erase step fails the script says which address to remove and exits non-zero. Every run still leaves one anonymised user and one emptied writing session in the database, and costs one scoring call.
+
+A redirect counts as a failure and is never followed. If the Access service token is missing or wrong, the first check fails with `returned 302 to <team>.cloudflareaccess.com` instead of passing on the login page.
+
+A withheld score (`awaiting_calibration`) counts as finished. The test checks that the pipeline ran, not what the score was.
+
+Its own tests run without a stack: `node --test scripts/smoke-test.test.mjs`.
+
+To roll staging back when it fails, see [rollback.md](rollback.md).
 
 ## If the tunnel or Docker is down
 
