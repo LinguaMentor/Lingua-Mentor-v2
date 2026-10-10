@@ -2,7 +2,7 @@
 
 A rollback puts the previous set of images back and checks that they work. It never touches the database: migrations only move forward and each one works with the previous release's code, so the old images run against the new schema.
 
-Roll back when the smoke test fails after a deploy and the automatic rollback did not run or did not fix it, or when someone finds a regression on staging that needs the last release gone. Fix forward instead when the problem is a migration that left the schema incompatible with the previous release; that needs a person to look at it first.
+The deploy workflow already rolls back by itself when the post-deploy check fails or the new containers do not become healthy. Use this runbook when that did not run or did not fix it, or when someone finds a regression on staging that needs the last release gone. `./deploy.sh rollback --commit <sha> --run <url> --reason <word>` in `/opt/linguamentor/staging` does steps 3 and 4's swap and logs it, if you prefer it to typing the commands. Fix forward instead when the problem is a migration that left the schema incompatible with the previous release; that needs a person to look at it first.
 
 ## What you need
 
@@ -27,7 +27,7 @@ Roll back when the smoke test fails after a deploy and the automatic rollback di
    diff images.env images.env.previous
    ```
 
-   `images.env` lists the four images the stack runs now, by digest. `images.env.previous` is the set it replaced. Whoever deploys keeps the file they overwrite under that name (#70 is expected to automate this). If `images.env.previous` is missing, stop: there is nothing known to go back to, and the commit to redeploy has to come from the deploy history on GitHub.
+   `images.env` lists the four images the stack runs now, by digest. `images.env.previous` is the set it replaced; every deploy keeps it. `deploys.log` in the same folder says which commit each set belongs to. If `images.env.previous` is missing, stop: there is nothing known to go back to, and the commit to redeploy has to come from the deploy history on GitHub.
 
 3. Swap them, keeping the bad set for the investigation:
 

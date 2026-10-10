@@ -67,6 +67,17 @@ services:
       start_period: 15s
     mem_limit: 1024m
 
+  # Run on its own before a rollout (deploy.sh does it), never started by `up`. It uses the
+  # ai-service image because that is where the schema migrations live until the backend restructure.
+  migrate:
+    image: ${AI_SERVICE_IMAGE:?set in images.env}
+    profiles: ["migrate"]
+    restart: "no"
+    env_file:
+      - path: /etc/linguamentor/staging.env
+        required: false
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+
   worker:
     image: ${WORKER_IMAGE:?set in images.env}
     restart: unless-stopped

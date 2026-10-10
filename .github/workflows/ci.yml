@@ -29,6 +29,7 @@ jobs:
       local-compose: ${{ steps.filter.outputs.local-compose }}
       staging-compose: ${{ steps.filter.outputs.staging-compose }}
       smoke-test: ${{ steps.filter.outputs.smoke-test }}
+      staging-deploy: ${{ steps.filter.outputs.staging-deploy }}
     steps:
       # Toolchain and CI files count too, so changing how a service is built
       # re-verifies it even when none of its source changed.
@@ -88,8 +89,14 @@ jobs:
               - ".github/workflows/ci.yml"
             smoke-test:
               - "scripts/smoke-test*.mjs"
+              - "scripts/post-deploy-check*.mjs"
               - ".nvmrc"
               - ".github/workflows/ci.yml"
+            staging-deploy:
+              - "infra/staging/deploy.sh"
+              - "infra/staging/docker-compose.yml"
+              - "scripts/test-staging-deploy.sh"
+              - ".github/workflows/**"
 
   api-gateway:
     needs: changes
@@ -180,8 +187,23 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: ".nvmrc"
-      - name: Test the post-deploy smoke test
-        run: node --test scripts/smoke-test.test.mjs
+      # Listed by name: the smoke test script itself matches Node's test-file pattern.
+      - name: Test the smoke test and the post-deploy check
+        run: node --test scripts/smoke-test.test.mjs scripts/post-deploy-check.test.mjs
+
+  # The deploy runs unattended against a server, so its script and workflow are tested like code.
+  staging-deploy:
+    needs: changes
+    if: needs.changes.outputs.staging-deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint the deploy script and its test
+        run: shellcheck infra/staging/deploy.sh scripts/test-staging-deploy.sh
+      - name: Lint the workflows
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+      - name: Run the deploy script against a copy of the staging stack
+        run: bash scripts/test-staging-deploy.sh
 
   # Never path-filtered: a secret can land in any file.
   security:
@@ -273,6 +295,7 @@ jobs:
         local-compose,
         staging-compose,
         smoke-test,
+        staging-deploy,
         security,
         pr-title,
         pr-ticket,

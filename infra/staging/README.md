@@ -39,15 +39,28 @@ sudo DOMAIN=<domain> TUNNEL_ID=<tunnel uuid> \
 
 A rebuild from nothing (new server, script, secrets, host key) took under 3 minutes, about 75 seconds of it in the script. Running it again changes nothing unless an input changed, so it is also how you rotate the CI key. It prints the server's SSH host key at the end. Store that line in the GitHub `staging` environment; a rebuild creates a new key and the secret must be updated.
 
-## Run the stack
+## Deploys
 
-Until #70 does this on every merge (keep the file you replace as `images.env.previous` first, which the [rollback](rollback.md) relies on):
+Every merge to `develop` runs `.github/workflows/deploy-staging.yml`. Nobody runs anything by hand.
 
-1. Put the app secrets in `/etc/linguamentor/staging.env` and the JWT keys in `/etc/linguamentor/keys/` (owned by `deploy`, not world-readable).
-2. Write `/opt/linguamentor/staging/images.env` with `API_GATEWAY_IMAGE`, `AI_SERVICE_IMAGE`, `WORKER_IMAGE` and `WEB_IMAGE`.
-3. As `deploy`: `docker compose --env-file images.env up -d`.
+1. **Build.** Each app is built once for arm64 and pushed to GHCR, tagged with the commit. The web image gets no build arguments: it carries no address, and the browser calls the API on the origin it loaded the page from, by relative path. Production will get this same image.
+2. **Deploy.** The job finds each image's digest in the registry, connects to the host over SSH through Cloudflare Access (the service token, the host key from the `STAGING_SSH_KNOWN_HOSTS` secret and the `cloudflared` version pinned in `setup.sh`), and copies `deploy.sh` and `docker-compose.yml` from the commit being deployed. `deploy.sh` then pulls the images by digest, runs the migration in a one-off container from the new `ai-service` image, and only then starts the new containers and waits for them to be healthy. A failed migration leaves staging exactly as it was. Containers that do not become healthy are rolled back on the spot.
+3. **Check.** `scripts/post-deploy-check.mjs` checks the web page, the API and its database through the staging hostname. It stands in for the smoke test until the API has a readiness check (#73). If it fails, the job runs `deploy.sh rollback`, checks again and still ends red.
 
-The web container listens on loopback port 3000 (the tunnel's `/*` route). The gateway stays on loopback 3001 (`/api/`). Build the web image with a public origin in `NEXT_PUBLIC_API_BASE_URL` (the pages run in the browser, so `http://api-gateway:3000` will not work). To check the file without the host paths: `API_GATEWAY_IMAGE=x AI_SERVICE_IMAGE=x WORKER_IMAGE=x WEB_IMAGE=x docker compose -f docker-compose.yml config`.
+Merges queue: the workflow allows one run at a time, in merge order. When several are waiting only the newest is kept, and it contains the others' changes. Migrations are also guarded on the host by a lock, so two can never run at once.
+
+The deploy needs, in the GitHub `staging` environment: the secrets `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`, `STAGING_SSH_PRIVATE_KEY`, `STAGING_SSH_KNOWN_HOSTS`, `DATABASE_URL`, `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY`, and the variables `STAGING_SSH_HOST` and `STAGING_URL`. It writes `DATABASE_URL` into `/etc/linguamentor/staging.env` and the JWT keys into `/etc/linguamentor/keys/` on every deploy, leaving any other line in that file alone. Other app settings (the LLM key, for example) go in that file by hand until they are added to the deploy.
+
+What each deploy leaves on the host, in `/opt/linguamentor/staging`:
+
+- `images.env`: the images running now, by digest. `images.env.previous` is the set before it, and `images.env.rolled-back` the last set that was rolled back.
+- `deploys.log`: one JSON line per deploy, rollback or failure, with the time, the commit, the run, the result and the four image digests. The job summary on GitHub shows the same digests.
+
+To rehearse a failed deploy, run the workflow by hand on `develop` with "Failure drill" ticked: the deploy goes through, the check is made to fail, and staging rolls back.
+
+`deploy.sh` is tested against a copy of this Compose file with `bash scripts/test-staging-deploy.sh` (needs Docker; about 3 minutes). Run in CI whenever the script, the Compose file or a workflow changes.
+
+The web container listens on loopback port 3000 (the tunnel's `/*` route). The gateway stays on loopback 3001 (`/api/`). To check the Compose file without the host paths: `API_GATEWAY_IMAGE=x AI_SERVICE_IMAGE=x WORKER_IMAGE=x WEB_IMAGE=x docker compose -f docker-compose.yml config`.
 
 To run only the web service on a laptop with placeholder image names for the others (from the repo root):
 
