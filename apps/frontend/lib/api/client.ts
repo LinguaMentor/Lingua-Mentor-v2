@@ -3,11 +3,9 @@
 //
 // Both send `credentials: "include"` on every request, not just /auth/refresh —
 // the browser only keeps the refresh cookie alive if it travels.
+import { API_BASE_URL } from "@/lib/api/base-url";
 import type { AuthSession, ErrorEnvelope } from "@/lib/api/types";
 import { useAuthStore } from "@/store/auth-store";
-
-// Empty means the origin the page loaded from, so one image serves every environment.
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 export class ApiError extends Error {
 	constructor(
@@ -35,7 +33,7 @@ async function parseError(res: Response): Promise<ApiError> {
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
 	let res: Response;
 	try {
-		res = await fetch(`${BASE_URL}${path}`, {
+		res = await fetch(`${API_BASE_URL}${path}`, {
 			...init,
 			credentials: "include",
 			headers: {

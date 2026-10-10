@@ -3,18 +3,21 @@ import { readFileSync } from "node:fs";
 import fastifyCookie from "@fastify/cookie";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, LogController } from "fastify";
 
 import { type AiServiceClient, createAiServiceClient } from "./clients/ai-service";
 import { loadEnv } from "./config/env";
 import { createPool, type DbClient } from "./db/client";
 import authRoutes from "./modules/auth/auth.routes";
 import { JwtStrategy } from "./modules/auth/jwt.strategy";
+import monitoringRoutes from "./modules/monitoring/monitoring.routes";
 import placementRoutes from "./modules/placement/placement.routes";
 import sessionRoutes from "./modules/session/session.routes";
 import voiceRoutes from "./modules/voice/voice.routes";
 import usersRoutes from "./modules/users/users.routes";
 import writingRoutes, { writingPublicRoutes } from "./modules/writing/writing.routes";
+import { loggerOptions } from "./observability/logger";
+import { REQUEST_ID_HEADER, requestIdFor, runWithRequestId } from "./observability/request-context";
 import { registerErrorEnvelope } from "./plugins/error-envelope";
 import {
 	type AppealEvalQueue,
@@ -51,10 +54,23 @@ export interface AppOptions {
 	aiService?: AiServiceClient;
 	corsOrigins?: string[];
 	srsBatchQueue?: SrsBatchQueue;
+	webErrorsDsn?: string;
+	logStream?: { write(line: string): void };
 }
 
 export function buildApp(opts: AppOptions = {}): FastifyInstance {
-	const app = Fastify({ logger: true });
+	const app = Fastify({
+		logger: loggerOptions(opts.logStream),
+		genReqId: requestIdFor,
+		logController: new LogController({ requestIdLogLabel: "requestId" }),
+	});
+
+	// Returned on every response, errors included, so a report from a learner can be matched to the logs.
+	app.addHook("onRequest", async (request, reply) => {
+		reply.header(REQUEST_ID_HEADER, request.id);
+	});
+	// After the body is parsed, so the handler and everything it awaits can read the id (see request-context.ts).
+	app.addHook("preValidation", (request, _reply, done) => runWithRequestId(request.id, done));
 
 	// Direct call, not app.register — Fastify v5 would scope it to the plugin.
 	registerErrorEnvelope(app);
@@ -79,6 +95,7 @@ export function buildApp(opts: AppOptions = {}): FastifyInstance {
 	let aiService = opts.aiService;
 	let corsOrigins = opts.corsOrigins;
 	let srsBatchQueue = opts.srsBatchQueue;
+	let webErrorsDsn = opts.webErrorsDsn;
 	if (!db || !queue || !appealQueue || !redis || !jwt || !aiService || !corsOrigins) {
 		const env = loadEnv();
 		db = db ?? createPool(env.databaseUrl);
@@ -95,6 +112,7 @@ export function buildApp(opts: AppOptions = {}): FastifyInstance {
 		aiService = aiService ?? createAiServiceClient(env.aiServiceUrl);
 		corsOrigins = corsOrigins ?? env.corsOrigins;
 		srsBatchQueue = srsBatchQueue ?? createSrsBatchQueue(env.redisUrl);
+		webErrorsDsn = webErrorsDsn ?? env.sentryWebDsn;
 	}
 
 	// The refresh cookie is cross-origin, so credentials must be on — and once
@@ -130,10 +148,10 @@ export function buildApp(opts: AppOptions = {}): FastifyInstance {
 		await app.db.end?.();
 	});
 
-	// Basic health endpoint used by the frontend and infra checks
-	app.get("/health", async (_request, _reply) => {
-		return { status: "ok", uptime: process.uptime() };
-	});
+	// Liveness. `/health` is for the container check; the tunnel only routes /api/, so the uptime check uses the other.
+	const liveness = async () => ({ status: "ok", uptime: process.uptime() });
+	app.get("/health", { logLevel: "warn" }, liveness);
+	app.get("/api/v1/health", { logLevel: "warn" }, liveness);
 
 	app.register(authRoutes, { prefix: "/api/v1/auth" });
 	app.register(usersRoutes, { prefix: "/api/v1/user" });
@@ -142,6 +160,7 @@ export function buildApp(opts: AppOptions = {}): FastifyInstance {
 	app.register(placementRoutes, { prefix: "/api/v1/placement" });
 	app.register(sessionRoutes, { prefix: "/api/v1/session" });
 	app.register(voiceRoutes, { prefix: "/api/v1/voice" });
+	app.register(monitoringRoutes, { prefix: "/api/v1/monitoring", webDsn: webErrorsDsn });
 
 	return app;
 }

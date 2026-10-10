@@ -29,6 +29,10 @@ ENV PATH="/app/.venv/bin:${PATH}"
 RUN chown -R app:app /app
 USER app
 
+# The commit the image is built from, for error reports. Late, so a new commit only changes this layer.
+ARG SENTRY_RELEASE=
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
+
 # worker/ is a pure BullMQ consumer (app/main.py) with no HTTP surface to
 # probe — there's no /health route to hit. Instead, check that the
 # top-level process (PID 1 under Docker, since there's no shell/entrypoint

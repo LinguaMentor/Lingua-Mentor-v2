@@ -26,10 +26,12 @@ fail() {
   exit "${2:-2}"
 }
 
+# staging.env also fills in the Compose file's settings, such as the error tracker's DSN.
 compose() {
-  local env_file=$1
+  local env_file=$1 settings=()
   shift
-  docker compose -f "$DEPLOY_DIR/docker-compose.yml" --project-directory "$DEPLOY_DIR" --env-file "$env_file" "$@"
+  [[ -f $CONF_DIR/staging.env ]] && settings=(--env-file "$CONF_DIR/staging.env")
+  docker compose -f "$DEPLOY_DIR/docker-compose.yml" --project-directory "$DEPLOY_DIR" "${settings[@]}" --env-file "$env_file" "$@"
 }
 
 # The value of one image variable in an env file, empty when the file or the variable is missing.
@@ -153,10 +155,20 @@ cmd_rollback() {
   restore_previous "$reason"
 }
 
+# Replaces one NAME='value' line in staging.env, keeping every other line.
+set_setting() {
+  local name=$1 value=$2 updated
+  [[ $value != *"'"* && $value != *$'\n'* ]] || fail "$name must not contain a quote or a newline"
+  # In place, since only the file is this user's, and single-quoted so Compose never expands a "$".
+  updated=$({ grep -v "^${name}=" "$CONF_DIR/staging.env" || true; printf "%s='%s'\n" "$name" "$value"; })
+  printf '%s\n' "$updated" >"$CONF_DIR/staging.env"
+  chmod 0600 "$CONF_DIR/staging.env"
+}
+
 # Writes the one secret this script owns per name, from NAME=<base64> lines. Never echoes a value.
 cmd_sync_secrets() {
   umask 077
-  local line name encoded value updated
+  local line name encoded value
   install -d -m 0700 "$CONF_DIR/keys"
   while IFS= read -r line; do
     [[ -n $line ]] || continue
@@ -164,13 +176,11 @@ cmd_sync_secrets() {
     encoded=${line#*=}
     value=$(printf '%s' "$encoded" | base64 -d) || fail "$name is not valid base64"
     case $name in
-      DATABASE_URL)
-        [[ $value != *"'"* && $value != *$'\n'* ]] || fail "DATABASE_URL must not contain a quote or a newline"
-        # Overwritten in place: the host's config directory is read-only to this user, only the file is theirs.
-        # Single quotes keep Compose from expanding a "$" in the password.
-        updated=$({ grep -v '^DATABASE_URL=' "$CONF_DIR/staging.env" || true; printf "DATABASE_URL='%s'\n" "$value"; })
-        printf '%s\n' "$updated" >"$CONF_DIR/staging.env"
-        chmod 0600 "$CONF_DIR/staging.env"
+      DATABASE_URL) set_setting "$name" "$value" ;;
+      # Empty turns error reports off.
+      SENTRY_DSN)
+        [[ -z $value || $value =~ ^https?://[A-Za-z0-9]+@[A-Za-z0-9.-]+(:[0-9]+)?/[0-9]+$ ]] || fail "$name is not a DSN"
+        set_setting "$name" "$value"
         ;;
       # The gateway runs as root in its container, so 0600 is enough; ai-service mounts only the public key.
       JWT_PRIVATE_KEY)

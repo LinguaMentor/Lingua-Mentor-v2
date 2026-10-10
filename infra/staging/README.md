@@ -49,7 +49,9 @@ Every merge to `develop` runs `.github/workflows/deploy-staging.yml`. Nobody run
 
 Merges queue: the workflow allows one run at a time, in merge order. When several are waiting only the newest is kept, and it contains the others' changes. Migrations are also guarded on the host by a lock, so two can never run at once.
 
-The deploy needs, in the GitHub `staging` environment: the secrets `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`, `STAGING_SSH_PRIVATE_KEY`, `STAGING_SSH_KNOWN_HOSTS`, `DATABASE_URL`, `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY`, and the variables `STAGING_SSH_HOST` and `STAGING_URL`. It writes `DATABASE_URL` into `/etc/linguamentor/staging.env` and the JWT keys into `/etc/linguamentor/keys/` on every deploy, leaving any other line in that file alone. Other app settings (the LLM key, for example) go in that file by hand until they are added to the deploy.
+The deploy needs, in the GitHub `staging` environment: the secrets `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET`, `STAGING_SSH_PRIVATE_KEY`, `STAGING_SSH_KNOWN_HOSTS`, `DATABASE_URL`, `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY`, `SENTRY_DSN` (the staging project's DSN in Bugsink, in its private-address form), and the variables `STAGING_SSH_HOST` and `STAGING_URL`. It writes `DATABASE_URL` and the DSN into `/etc/linguamentor/staging.env` and the JWT keys into `/etc/linguamentor/keys/` on every deploy, leaving any other line in that file alone. Other app settings (the LLM key, for example) go in that file by hand until they are added to the deploy.
+
+`deploy.sh` also passes `staging.env` to Compose for substitution, which is how every service gets `SENTRY_DSN`. A missing DSN secret only turns error reports off.
 
 What each deploy leaves on the host, in `/opt/linguamentor/staging`:
 
@@ -110,6 +112,33 @@ A withheld score (`awaiting_calibration`) counts as finished. The test checks th
 Its own tests run without a stack: `node --test scripts/smoke-test.test.mjs`.
 
 To roll staging back when it fails, see [rollback.md](rollback.md).
+
+## Logs, errors and alerts
+
+**Logs.** Every container writes JSON lines with `time`, `level`, `service`, `requestId` and `msg`, rotated at 10 MB with 5 files kept per container, so logs can't fill the disk. The gateway returns the request id in the `x-request-id` header, and the worker and ai-service log under the same id. To follow one request on the host:
+
+```bash
+cd /opt/linguamentor/staging
+docker compose --env-file /etc/linguamentor/staging.env --env-file images.env logs --no-log-prefix api-gateway worker ai-service | grep '"<request id>"'
+```
+
+**Errors** go to Bugsink at `errors.<domain>`, in the `staging` project, tagged with the service (`api-gateway`, `ai-service`, `worker`, `web`, `web-server`), the environment, the release (the commit) and the request id. The project's alert posts to the team's Telegram group. To send a test error from each service (on the host, in this folder, with the same `--env-file` options as above):
+
+- `docker compose ... exec api-gateway node dist/observability/send-test-error.js`
+- `docker compose ... exec ai-service python -m app.core.monitoring`
+- `docker compose ... exec worker python -m app.monitoring`
+- Browser: open the staging site, then run `setTimeout(() => { throw new Error("browser test error") })` in the console.
+
+Bugsink drops events beyond 1,000 per 5 minutes per project without saying so, so a quiet project does not prove a healthy service. The uptime check covers outages.
+
+**Uptime.** Grafana Cloud's synthetic monitoring checks `https://staging.<domain>/` (the web app) and `https://staging.<domain>/api/v1/health` (the gateway) every minute, with a Cloudflare Access service token of their own in the request headers. An alert rule posts to the team's Telegram group when either check fails for 2 minutes in a row. Set up once:
+
+1. Cloudflare Zero Trust: create a service token `linguamentor-uptime` and add a Service Auth policy for it to the `staging.<domain>` application only. It must not reach `ssh-staging`.
+2. Grafana Cloud, Testing & synthetics, Synthetics, Checks, Create a new check, API Endpoint: two HTTP checks, `staging-web` on `https://staging.<domain>/` and `staging-api` on `https://staging.<domain>/api/v1/health`. In Request options add the headers `CF-Access-Client-Id` and `CF-Access-Client-Secret` with the token's values. Execution: frequency 1m and exactly one probe, Frankfurt. Grafana estimates 44,640 executions a month for each, so about 89,000 for two, under the free plan's 100,000; a second probe would go over.
+3. Grafana, Alerting, Contact points: a Telegram contact point with the bot token and chat id of the Bugsink alerts.
+4. Grafana, Alerting, Alert rules: one rule on `probe_success` for the two checks, evaluated every minute, firing when the last value is 0 for 2 minutes, sent to that contact point.
+
+To test it, stop the tunnel on the host (`sudo systemctl stop cloudflared`) and wait for the alert; start it again afterwards.
 
 ## If the tunnel or Docker is down
 

@@ -7,8 +7,14 @@ from fastapi import FastAPI
 from app.api.v1.routers import adaptive_learning, mentor, persona, placement, writing_eval
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
+from app.core.logging import configure_logging
+from app.core.monitoring import init_monitoring
+from app.core.request_id import RequestIdMiddleware
 from app.db.session import close_pool, create_pool
 from app.providers.llm.groq_provider import GroqProvider
+
+configure_logging()
+init_monitoring(get_settings())
 
 
 @asynccontextmanager
@@ -31,6 +37,7 @@ app = FastAPI(
 )
 
 register_error_handlers(app)
+app.add_middleware(RequestIdMiddleware)
 
 app.include_router(writing_eval.router, prefix="/api/v1")
 app.include_router(placement.router, prefix="/api/v1")

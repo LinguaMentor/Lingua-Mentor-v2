@@ -11,6 +11,8 @@ export interface Env {
 	aiServiceUrl: string;
 	// Explicit by necessity: CORS rejects "*" once credentials are involved.
 	corsOrigins: string[];
+	// The web project's DSN in Bugsink, where browser error reports are relayed. Unset drops them.
+	sentryWebDsn?: string;
 }
 
 export function loadEnv(): Env {
@@ -41,5 +43,6 @@ export function loadEnv(): Env {
 			.split(",")
 			.map((o) => o.trim())
 			.filter(Boolean),
+		sentryWebDsn: process.env.SENTRY_WEB_DSN || undefined,
 	};
 }

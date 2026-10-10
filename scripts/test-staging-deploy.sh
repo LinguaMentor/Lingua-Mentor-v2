@@ -137,6 +137,7 @@ chmod 0555 "$CONF_DIR"
 	printf 'DATABASE_URL=%s\n' "$(printf '%s' 'postgresql://u:p$a$$word@db.example/x?sslmode=require' | base64 -w0)"
 	printf 'JWT_PRIVATE_KEY=%s\n' "$(printf '%s' 'fake private key, only checked for its file mode' | base64 -w0)"
 	printf 'JWT_PUBLIC_KEY=%s\n' "$(printf '%s' 'fake public key, only checked for its file mode' | base64 -w0)"
+	printf 'SENTRY_DSN=%s\n' "$(printf '%s' 'http://0123abcd@10.0.1.9:8000/2' | base64 -w0)"
 } | "$DEPLOY" sync-secrets >/dev/null
 check "secrets: the database URL is replaced and kept literal, other settings stay" \
 	test "$(grep -c '^DATABASE_URL=' "$CONF_DIR/staging.env")" = 1 \
@@ -144,8 +145,12 @@ check "secrets: the database URL is replaced and kept literal, other settings st
 	-a "$(grep -c '^ENFORCE_CALIBRATION_GATE=false' "$CONF_DIR/staging.env")" = 1
 check "secrets: file modes are 0600 for the env file and private key, 0644 for the public key" \
 	test "$(stat -c %a "$CONF_DIR/staging.env" "$CONF_DIR/keys/jwt_private.pem" "$CONF_DIR/keys/jwt_public.pem" | tr '\n' ' ')" = "600 600 644 "
+check "secrets: the DSN is stored" \
+	test "$(grep '^SENTRY_DSN=' "$CONF_DIR/staging.env")" = "SENTRY_DSN='http://0123abcd@10.0.1.9:8000/2'"
 check "secrets: an unknown name is refused" bash -c "! printf 'X=eQ==\n' | $DEPLOY sync-secrets"
-: >"$CONF_DIR/staging.env"
+check "secrets: a DSN that is not one is refused" bash -c "! printf 'SENTRY_DSN=%s\n' $(printf 'not a dsn' | base64 -w0) | $DEPLOY sync-secrets"
+# The stand-ins need nothing else from the file, and the DSN is checked once they run.
+grep '^SENTRY_DSN=' "$CONF_DIR/staging.env" >"$WORK/dsn" && cat "$WORK/dsn" >"$CONF_DIR/staging.env"
 
 # ---- a first deploy, then a second ---------------------------------------------------------------------------
 check "a tag instead of a digest is refused" bash -c "! $DEPLOY deploy --commit $COMMIT_1 --run $RUN_URL --api-gateway nginx:latest --ai-service x --worker x --web x"
@@ -158,6 +163,11 @@ check "the first deploy succeeds" deploy "$COMMIT_1" v1 v1 v1
 check "it recorded the commit and the digests it ran" \
 	grep -q "\"commit\":\"$COMMIT_1\".*\"result\":\"deployed\".*\"api-gateway\":\"$(digest_of api v1)\"" "$DEPLOY_DIR/deploys.log"
 check "the stack is running release 1" test "$(running_version)" = v1
+check "every service gets the DSN from the secrets file, and the staging environment name" \
+	test "$(docker exec "$(container_id api-gateway)" printenv SENTRY_DSN SENTRY_WEB_DSN SENTRY_ENVIRONMENT | tr '\n' ' ')" = "http://0123abcd@10.0.1.9:8000/2 http://0123abcd@10.0.1.9:8000/2 staging " \
+	-a "$(docker exec "$(container_id worker)" printenv SENTRY_DSN)" = "http://0123abcd@10.0.1.9:8000/2"
+check "container logs are rotated" \
+	test "$(docker inspect --format '{{.HostConfig.LogConfig.Type}} {{index .HostConfig.LogConfig.Config "max-size"}} {{index .HostConfig.LogConfig.Config "max-file"}}' "$(container_id web)")" = "json-file 10m 5"
 
 check "the second deploy succeeds, and the migration ran from the new image" deploy "$COMMIT_2" v2 v2 v2
 check "the set it replaced is kept as images.env.previous" \

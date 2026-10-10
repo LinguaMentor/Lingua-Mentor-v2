@@ -2,6 +2,7 @@
 import { Queue } from "bullmq";
 import IORedis from "ioredis";
 
+import { currentRequestId } from "../observability/request-context";
 import {
 	APPEAL_EVAL_JOB_OPTIONS,
 	JOB_APPEAL_EVALUATE,
@@ -21,6 +22,13 @@ import {
 export interface WritingEvalJobData {
 	session_id: string;
 	exam_type: string;
+	request_id?: string;
+}
+
+// The submitting request's id, so the worker and ai-service log under it too.
+function requestIdField(): { request_id?: string } {
+	const requestId = currentRequestId();
+	return requestId ? { request_id: requestId } : {};
 }
 
 /** Narrow surface the app depends on, so tests can substitute a fake. */
@@ -46,7 +54,7 @@ export function enqueueWritingEval(
 	// jobId = session_id: idempotent while the record lives (see constants.ts).
 	return queue.add(
 		JOB_WRITING_EVALUATE,
-		{ session_id: sessionId, exam_type: examType },
+		{ session_id: sessionId, exam_type: examType, ...requestIdField() },
 		{ jobId: sessionId },
 	);
 }
@@ -55,6 +63,7 @@ export function enqueueWritingEval(
  * worker re-reads the score_appeals row as the source of truth. */
 export interface AppealEvalJobData {
 	appeal_id: string;
+	request_id?: string;
 }
 
 export interface AppealEvalQueue {
@@ -72,7 +81,11 @@ export function createAppealEvalQueue(redisUrl: string): Queue {
 
 export function enqueueAppealEval(queue: AppealEvalQueue, appealId: string): Promise<unknown> {
 	// jobId = appeal_id — idempotent per appeal, like jobId = session_id above.
-	return queue.add(JOB_APPEAL_EVALUATE, { appeal_id: appealId }, { jobId: appealId });
+	return queue.add(
+		JOB_APPEAL_EVALUATE,
+		{ appeal_id: appealId, ...requestIdField() },
+		{ jobId: appealId },
+	);
 }
 
 /** Fan-out trigger. Carries no data: the worker reads the active-learner set

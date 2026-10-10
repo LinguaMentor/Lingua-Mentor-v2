@@ -88,3 +88,11 @@ confirm the pieces actually talk to each other correctly.
    (PRD §11.5).
 
 Tear down: stop the services, then `docker stop lm-pg`.
+
+## Logs and error reports
+
+Log lines are JSON in the gateway's shape. Each job runs under the `request_id` in its payload, the id of the request that queued it, or a new one for scheduled jobs; the nightly batch passes its own to every job it fans out. Calls to ai-service carry it as `x-request-id`.
+
+When `SENTRY_DSN` is set, anything logged at error level goes to Bugsink, including the last failed attempt of a scoring job. So does an unexpected exception in a job, which bullmq would otherwise record silently. Local variables are never sent: a task's frames hold the essay it is scoring (`app/monitoring.py`).
+
+`python -m app.monitoring` sends one test error with the container's settings.

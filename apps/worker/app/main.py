@@ -5,25 +5,22 @@ import logging
 import signal
 
 import asyncpg
-import httpx
 from bullmq import Queue, Worker
 
+from app.clients.ai_service import make_client
+from app.log_config import configure_logging
+from app.monitoring import init_monitoring
 from app.settings import load_settings
 from app.worker_settings import QUEUE_DAILY_SESSION_GENERATION, build_queue_registry
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
 
 
 async def run() -> None:
     settings = load_settings()
+    init_monitoring(settings)
     pool = await asyncpg.create_pool(settings.database_url, min_size=1, max_size=5)
-    # Read timeout must outlive a full LLM evaluation — httpx's 5s default
-    # would kill every real scoring call.
-    http = httpx.AsyncClient(
-        base_url=settings.ai_service_url,
-        timeout=httpx.Timeout(120.0, connect=10.0),
-    )
+    http = make_client(settings.ai_service_url)
 
     # The 2AM batch fans out onto this queue, which this same worker consumes.
     fanout_queue = Queue(QUEUE_DAILY_SESSION_GENERATION, {"connection": settings.redis_url})
@@ -55,4 +52,5 @@ async def run() -> None:
 
 
 if __name__ == "__main__":
+    configure_logging()
     asyncio.run(run())

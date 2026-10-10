@@ -82,3 +82,15 @@ points at the right context). It publishes a self-contained runtime image
 via `pnpm deploy --prod`, which resolves the workspace dependency into a
 real copy rather than a symlink back into `packages/` — the final image
 carries nothing from the rest of the monorepo.
+
+## Logs and error reports
+
+Every log line is JSON with `time`, `level`, `service`, `requestId` and `msg`. ai-service and the worker write the same shape, so one request can be followed across the three by its id.
+
+- The request id is the caller's `x-request-id` when it is 1 to 128 letters, digits or `._:-`, and a new UUID otherwise. It comes back on every response, goes into queued jobs as `request_id`, and goes to ai-service as `x-request-id` (`src/observability/request-context.ts`).
+- Errors that end in a 500 are reported to Bugsink when `SENTRY_DSN` is set, tagged with the request id. Nothing from the request goes with them: no body, headers, cookies, query string or user. The SDK is told to collect none of it, and `scrubErrorEvent` in shared-schemas removes it again.
+- A logged error keeps only its type, message, stack and code. A database driver's `detail` can quote the row, essay included.
+- `POST /api/v1/monitoring/envelope` relays the browser's error reports to the web project (`SENTRY_WEB_DSN`), whatever DSN the browser put in them. Unset, it accepts and drops them.
+- Never log essay or chat text. `test/request-id.test.ts` fails if a known essay reaches the log.
+
+`node dist/observability/send-test-error.js` sends one test error with the container's settings.

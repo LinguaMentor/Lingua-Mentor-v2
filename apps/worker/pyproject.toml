@@ -11,6 +11,7 @@ python = "^3.12"
 bullmq = "^2.26"
 asyncpg = "^0.31"
 httpx = "^0.28"         # calls ai-service internal endpoints; engines live there, not here
+sentry-sdk = "^2.71"    # error reports to Bugsink, which speaks the Sentry protocol
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.3"

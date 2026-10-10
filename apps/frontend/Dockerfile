@@ -26,8 +26,11 @@ RUN pnpm --filter @lingumentor/shared-schemas build
 # Only the local stack sets them, to a host address the browser can reach.
 ARG NEXT_PUBLIC_API_BASE_URL=
 ARG NEXT_PUBLIC_WS_VOICE_URL=
+# The commit the image is built from, for error reports; the browser's copy is inlined at build.
+ARG SENTRY_RELEASE=
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
 	NEXT_PUBLIC_WS_VOICE_URL=$NEXT_PUBLIC_WS_VOICE_URL \
+	NEXT_PUBLIC_SENTRY_RELEASE=$SENTRY_RELEASE \
 	NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter frontend build
 
@@ -46,6 +49,9 @@ COPY --from=build --chown=node:node /repo/apps/frontend/public ./apps/frontend/p
 
 USER node
 EXPOSE 3000
+
+ARG SENTRY_RELEASE=
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 	CMD node -e "require('http').get('http://localhost:3000/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"

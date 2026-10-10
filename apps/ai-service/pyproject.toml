@@ -16,6 +16,7 @@ httpx = "^0.28"
 pyyaml = "^6.0"         # exam definitions in app/config/exams/ are YAML, not code
 greenlet = "^3.1"       # required by SQLAlchemy's async engine
 starlette = ">=1.3.1"   # security floor; FastAPI alone would allow a vulnerable 0.x
+sentry-sdk = "^2.71"     # error reports to Bugsink, which speaks the Sentry protocol
 
 [build-system]
 requires = ["poetry-core"]

@@ -3,4 +3,5 @@
 // params, header parsing) stays local to that app instead of landing here —
 // see docs/architecture/project-structure-and-conventions.md §1.
 export * from "./auth";
+export * from "./monitoring";
 export * from "./writing";

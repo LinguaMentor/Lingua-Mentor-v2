@@ -9,9 +9,31 @@ from uuid import UUID
 
 import httpx
 
+from app.log_config import REQUEST_ID_HEADER, request_id_var
+
 EVALUATE_PATH = "/api/v1/writing-eval/evaluate"
 APPEAL_PATH = "/api/v1/writing-eval/appeal"
 DAILY_DIAGNOSTIC_PATH = "/api/v1/mentor/daily-diagnostic"
+
+
+async def _send_request_id(request: httpx.Request) -> None:
+    request_id = request_id_var.get()
+    if request_id:
+        request.headers[REQUEST_ID_HEADER] = request_id
+
+
+def make_client(
+    base_url: str, transport: httpx.AsyncBaseTransport | None = None
+) -> httpx.AsyncClient:
+    """Every call carries the job's request id, so ai-service logs under the same id."""
+    return httpx.AsyncClient(
+        base_url=base_url,
+        # Read timeout must outlive a full LLM evaluation — httpx's 5s default
+        # would kill every real scoring call.
+        timeout=httpx.Timeout(120.0, connect=10.0),
+        event_hooks={"request": [_send_request_id]},
+        transport=transport,
+    )
 
 
 class TerminalEvalError(Exception):
