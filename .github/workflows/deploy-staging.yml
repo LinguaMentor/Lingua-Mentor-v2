@@ -226,8 +226,9 @@ jobs:
           SHA: ${{ github.sha }}
         run: ssh staging "${REMOTE_DIR}/deploy.sh rollback --commit ${SHA} --run ${RUN_URL} --reason check_failed"
 
+      # `always()` is needed on both: after a failed check, a step without a status function is skipped.
       - name: Check staging after the rollback
-        if: steps.rollback.outcome == 'success'
+        if: always() && steps.rollback.outcome == 'success'
         env:
           STAGING_URL: ${{ vars.STAGING_URL }}
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
@@ -236,7 +237,7 @@ jobs:
 
       # The run stays red after a rollback, so a failed deploy is never mistaken for a good one.
       - name: Fail the deploy
-        if: steps.rollback.outcome == 'success'
+        if: always() && steps.rollback.outcome == 'success'
         run: |
           echo "::error::The post-deploy check failed and staging was rolled back to the previous images."
           exit 1
