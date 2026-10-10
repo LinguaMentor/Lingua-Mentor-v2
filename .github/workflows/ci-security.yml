@@ -1,7 +1,7 @@
 name: CI - security
 on:
   # Called by ci.yml on every PR (never path-filtered: a secret can land in
-  # any file) and by deploy.yml on every push to main.
+  # any file).
   workflow_call:
 
 permissions:

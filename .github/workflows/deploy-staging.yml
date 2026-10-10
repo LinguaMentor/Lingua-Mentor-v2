@@ -1,0 +1,267 @@
+name: Deploy staging
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      fail_check:
+        description: Failure drill - make the post-deploy check fail, to watch staging roll back
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One staging deploy at a time, in merge order. A run waits for the one before it; when several are waiting
+# only the newest is kept, and it carries the changes of the ones it replaced.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  # CI has already passed on the pull request, and `develop` only takes up-to-date, green branches.
+  build:
+    name: Build ${{ matrix.app }}
+    # Servers are Arm; a native runner avoids slow emulation.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          # Same cache scopes as ci-image.yml, so pull request builds warm these.
+          - app: api-gateway
+            scope: api-gateway
+            context: .
+            dockerfile: apps/api-gateway/Dockerfile
+          - app: ai-service
+            scope: ai-service
+            context: apps/ai-service
+            dockerfile: apps/ai-service/Dockerfile
+          - app: worker
+            scope: worker
+            context: apps/worker
+            dockerfile: apps/worker/Dockerfile
+          # No build arguments: the image carries no environment address and is the one production will get.
+          - app: web
+            scope: frontend
+            context: .
+            dockerfile: apps/frontend/Dockerfile
+    steps:
+      - uses: actions/checkout@v7
+
+      # GHCR rejects an uppercase repository path.
+      - name: Lowercase image owner
+        id: owner
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "lc=${OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/${{ steps.owner.outputs.lc }}/lingumentor-${{ matrix.app }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.scope }}
+
+  deploy:
+    name: Deploy to staging
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    permissions:
+      contents: read
+      packages: read
+    env:
+      REMOTE_DIR: /opt/linguamentor/staging
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The digest is what gets deployed, so it is read from the registry, not guessed from the tag.
+      - name: Pin the images by digest
+        id: images
+        env:
+          OWNER: ${{ github.repository_owner }}
+          SHA: ${{ github.sha }}
+        run: |
+          for app in api-gateway ai-service worker web; do
+            repo="ghcr.io/${OWNER,,}/lingumentor-${app}"
+            digest=$(docker buildx imagetools inspect "${repo}:${SHA}" --format '{{.Manifest.Digest}}')
+            [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::no digest for ${repo}:${SHA}"; exit 1; }
+            echo "${app//-/_}=${repo}@${digest}" >> "$GITHUB_OUTPUT"
+          done
+
+      # The same version and checksum the staging host's setup script pins, read from there so there is one place to bump.
+      - name: Install the pinned cloudflared
+        run: |
+          version=$(sed -n 's/^CLOUDFLARED_VERSION=//p' infra/staging/setup.sh)
+          sha256=$(sed -n 's/^CLOUDFLARED_SHA256_amd64=//p' infra/staging/setup.sh)
+          [[ -n $version && -n $sha256 ]] || { echo "::error::cloudflared pin not found in infra/staging/setup.sh"; exit 1; }
+          curl -fsSL -o cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/download/${version}/cloudflared-linux-amd64.deb"
+          echo "${sha256}  cloudflared.deb" | sha256sum -c --quiet -
+          sudo dpkg -i cloudflared.deb
+          cloudflared --version
+
+      # An unknown host key fails the connection instead of being trusted.
+      - name: Set up the SSH connection
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+          SSH_HOST: ${{ vars.STAGING_SSH_HOST }}
+          ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          # Read by `cloudflared access ssh`, which is how the connection gets past Cloudflare Access. Set here,
+          # after the third-party actions have run, so only the steps below can see the token.
+          echo "TUNNEL_SERVICE_TOKEN_ID=${ACCESS_CLIENT_ID}" >> "$GITHUB_ENV"
+          echo "TUNNEL_SERVICE_TOKEN_SECRET=${ACCESS_CLIENT_SECRET}" >> "$GITHUB_ENV"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host staging
+            HostName ${SSH_HOST}
+            User deploy
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            BatchMode yes
+            ServerAliveInterval 20
+            ConnectTimeout 30
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+
+      # The host runs the copies from this commit, never an older one left there.
+      - name: Send the deploy script and the Compose file
+        run: |
+          for file in deploy.sh docker-compose.yml; do
+            ssh staging "cat > ${REMOTE_DIR}/${file}.new && mv ${REMOTE_DIR}/${file}.new ${REMOTE_DIR}/${file}" < "infra/staging/${file}"
+          done
+          ssh staging "chmod 700 ${REMOTE_DIR}/deploy.sh"
+
+      - name: Update the secrets on the host
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+        run: |
+          {
+            for name in DATABASE_URL JWT_PRIVATE_KEY JWT_PUBLIC_KEY; do
+              printf '%s=%s\n' "$name" "$(printf '%s' "${!name}" | base64 -w0)"
+            done
+          } | ssh staging "${REMOTE_DIR}/deploy.sh sync-secrets"
+
+      - name: Deploy
+        id: deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+          API_GATEWAY: ${{ steps.images.outputs.api_gateway }}
+          AI_SERVICE: ${{ steps.images.outputs.ai_service }}
+          WORKER: ${{ steps.images.outputs.worker }}
+          WEB: ${{ steps.images.outputs.web }}
+        run: |
+          # A token that lives only as long as this job, so the host can pull whether or not the packages are public.
+          # GHCR ignores the user name; a fixed one keeps the actor's name out of a remote command.
+          printf '%s' "$GITHUB_TOKEN" | ssh staging "docker login ghcr.io -u github-actions --password-stdin"
+          ssh staging "${REMOTE_DIR}/deploy.sh deploy --commit ${SHA} --run ${RUN_URL} --api-gateway ${API_GATEWAY} --ai-service ${AI_SERVICE} --worker ${WORKER} --web ${WEB}"
+
+      - name: Log out of GHCR on the host
+        if: always()
+        run: ssh staging "docker logout ghcr.io" || true
+
+      # Stands in for the smoke test until the API has a readiness check (#73).
+      - name: Check staging
+        id: check
+        env:
+          STAGING_URL: ${{ vars.STAGING_URL }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          FAIL_CHECK: ${{ inputs.fail_check }}
+        run: |
+          if [[ $FAIL_CHECK == "true" ]]; then
+            echo "::warning::Failure drill: the check is made to fail"
+            exit 1
+          fi
+          node scripts/post-deploy-check.mjs
+
+      - name: Roll staging back
+        id: rollback
+        if: failure() && steps.deploy.outcome == 'success' && steps.check.outcome == 'failure'
+        env:
+          SHA: ${{ github.sha }}
+        run: ssh staging "${REMOTE_DIR}/deploy.sh rollback --commit ${SHA} --run ${RUN_URL} --reason check_failed"
+
+      - name: Check staging after the rollback
+        if: steps.rollback.outcome == 'success'
+        env:
+          STAGING_URL: ${{ vars.STAGING_URL }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: node scripts/post-deploy-check.mjs
+
+      # The run stays red after a rollback, so a failed deploy is never mistaken for a good one.
+      - name: Fail the deploy
+        if: steps.rollback.outcome == 'success'
+        run: |
+          echo "::error::The post-deploy check failed and staging was rolled back to the previous images."
+          exit 1
+
+      - name: Summary
+        if: always()
+        env:
+          SHA: ${{ github.sha }}
+          API_GATEWAY: ${{ steps.images.outputs.api_gateway }}
+          AI_SERVICE: ${{ steps.images.outputs.ai_service }}
+          WORKER: ${{ steps.images.outputs.worker }}
+          WEB: ${{ steps.images.outputs.web }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          CHECK: ${{ steps.check.outcome }}
+          ROLLBACK: ${{ steps.rollback.outcome }}
+        run: |
+          {
+            echo "### Staging deploy of \`${SHA}\`"
+            echo
+            echo "Deploy: **${DEPLOY}**, check: **${CHECK}**, rollback: **${ROLLBACK}**"
+            echo
+            echo "| App | Image |"
+            echo "| --- | --- |"
+            echo "| api-gateway | \`${API_GATEWAY}\` |"
+            echo "| ai-service | \`${AI_SERVICE}\` |"
+            echo "| worker | \`${WORKER}\` |"
+            echo "| web | \`${WEB}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

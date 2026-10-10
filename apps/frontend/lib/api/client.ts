@@ -6,7 +6,8 @@
 import type { AuthSession, ErrorEnvelope } from "@/lib/api/types";
 import { useAuthStore } from "@/store/auth-store";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+// Empty means the origin the page loaded from, so one image serves every environment.
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 export class ApiError extends Error {
 	constructor(

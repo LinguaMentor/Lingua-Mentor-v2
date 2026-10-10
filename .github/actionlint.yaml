@@ -1,0 +1,6 @@
+paths:
+  .github/workflows/deploy-staging.yml:
+    ignore:
+      # The deploy fills in the commit, the image digests and the paths on the runner before sending
+      # each command to the host, so expanding them on the client side is the point.
+      - "shellcheck reported issue in this script: SC2029:.+"

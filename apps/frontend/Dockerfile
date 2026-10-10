@@ -21,10 +21,11 @@ COPY apps/frontend apps/frontend
 RUN mkdir -p apps/frontend/public
 RUN pnpm --filter @lingumentor/shared-schemas build
 
-# Inlined at `next build`. The browser uses these, so they must be a host
-# address (localhost in the local stack), never a Compose service name.
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
-ARG NEXT_PUBLIC_WS_VOICE_URL=ws://localhost:3000/voice
+# Inlined at `next build`. Empty (the default) means the origin the page loaded
+# from, which is what staging and production images use so one image serves both.
+# Only the local stack sets them, to a host address the browser can reach.
+ARG NEXT_PUBLIC_API_BASE_URL=
+ARG NEXT_PUBLIC_WS_VOICE_URL=
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
 	NEXT_PUBLIC_WS_VOICE_URL=$NEXT_PUBLIC_WS_VOICE_URL \
 	NEXT_TELEMETRY_DISABLED=1

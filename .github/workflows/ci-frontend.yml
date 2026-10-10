@@ -1,7 +1,7 @@
 name: CI - frontend
 on:
-  # Runs only when called: ci.yml on pull requests (with per-service path
-  # filtering inside the workflow) and deploy.yml on every push to main.
+  # Runs only when called, by ci.yml on pull requests (with per-service path
+  # filtering inside the workflow).
   workflow_call:
 
 permissions:
