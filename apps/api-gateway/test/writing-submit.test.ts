@@ -49,7 +49,11 @@ describe("POST /api/v1/writing/submit", () => {
 
 		expect(queue.jobs).toHaveLength(1);
 		expect(queue.jobs[0].opts.jobId).toBe(SESSION_ID);
-		expect(queue.jobs[0].data).toEqual({ session_id: SESSION_ID, exam_type: "ielts_academic" });
+		expect(queue.jobs[0].data).toEqual({
+			session_id: SESSION_ID,
+			exam_type: "ielts_academic",
+			request_id: res.headers["x-request-id"],
+		});
 	});
 
 	it("rejects a request with no bearer token", async () => {

@@ -1,6 +1,9 @@
 import { buildApp } from "./app";
+import { flushMonitoring, initMonitoring } from "./observability/monitoring";
 
 async function main() {
+	// Before the app is built, so an error while building it is reported too.
+	initMonitoring();
 	const app = buildApp();
 	const port = Number(process.env.PORT || 3000);
 
@@ -10,7 +13,7 @@ async function main() {
 		process.once(signal, () => {
 			app.log.info({ signal }, "shutting down");
 			app.close().then(
-				() => process.exit(0),
+				() => flushMonitoring().finally(() => process.exit(0)),
 				(err: unknown) => {
 					app.log.error(err);
 					process.exit(1);

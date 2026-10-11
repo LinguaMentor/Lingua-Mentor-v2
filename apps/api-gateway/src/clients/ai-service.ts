@@ -1,5 +1,6 @@
 // Synchronous HTTP client for ai-service. Writing goes async via BullMQ, but
 // placement is one-shot onboarding, so the caller waits for the profile.
+import { currentRequestId, REQUEST_ID_HEADER } from "../observability/request-context";
 import { AppError } from "../plugins/error-envelope";
 
 export interface CefrDimension {
@@ -136,13 +137,19 @@ export function createAiServiceClient(baseUrl: string): AiServiceClient {
 		throw new AppError(res.status >= 500 ? 502 : res.status, code, message);
 	}
 
+	// The caller's request id travels with every call, so ai-service logs under the same id.
+	function headers(): Record<string, string> {
+		const requestId = currentRequestId();
+		return {
+			"content-type": "application/json",
+			...(requestId ? { [REQUEST_ID_HEADER]: requestId } : {}),
+		};
+	}
+
 	async function call<T>(path: string, init: RequestInit): Promise<T> {
 		let res: Response;
 		try {
-			res = await fetch(`${base}${path}`, {
-				...init,
-				headers: { "content-type": "application/json", ...(init.headers ?? {}) },
-			});
+			res = await fetch(`${base}${path}`, { ...init, headers: headers() });
 		} catch {
 			// DNS/connection/timeout — the service is down, not a client error.
 			throw new AppError(502, "AI_SERVICE_UNREACHABLE", "evaluation service is unavailable");
@@ -195,7 +202,7 @@ export function createAiServiceClient(baseUrl: string): AiServiceClient {
 			try {
 				res = await fetch(`${base}/api/v1/mentor/chat`, {
 					method: "POST",
-					headers: { "content-type": "application/json" },
+					headers: headers(),
 					body: JSON.stringify({
 						learner_profile_id: learnerProfileId,
 						lesson_session_id: lessonSessionId,

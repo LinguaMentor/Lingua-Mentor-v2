@@ -118,8 +118,9 @@ async def evaluate_essay(
         try:
             output = _parse_output(response.content, config)
         except (json.JSONDecodeError, ValidationError, ValueError) as second_error:
+            # The type only: pydantic's message quotes the output, which can quote the essay.
             raise EvaluationError(
-                f"model output failed validation twice: {second_error}"
+                f"model output failed validation twice ({type(second_error).__name__})"
             ) from second_error
 
     overall = compute_overall_band(output, config)

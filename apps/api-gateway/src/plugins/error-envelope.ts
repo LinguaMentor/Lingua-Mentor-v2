@@ -3,6 +3,8 @@
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { ZodIssue } from "zod";
 
+import { reportError } from "../observability/monitoring";
+
 export class AppError extends Error {
 	constructor(
 		public readonly statusCode: number,
@@ -72,6 +74,7 @@ export function registerErrorEnvelope(app: FastifyInstance): void {
 		}
 		// Unknown error: log the real thing, never leak internals to the client.
 		request.log.error({ err }, "unhandled error");
+		reportError(err, request.id);
 		return reply.status(500).send(envelope("INTERNAL_ERROR", "internal server error"));
 	});
 

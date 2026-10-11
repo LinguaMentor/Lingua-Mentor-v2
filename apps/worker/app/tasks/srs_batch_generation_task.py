@@ -16,6 +16,7 @@ import asyncpg
 from bullmq import Queue
 
 from app.db.daily_session_queries import list_active_learners
+from app.log_config import request_id_var
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,8 @@ async def run_srs_batch(
         # bill the same learner twice.
         await queue.add(
             JOB_DAILY_SESSION_GENERATE,
-            {"learner_profile_id": learner_profile_id},
+            # The batch's id, so one night's generation can be followed through every learner's job.
+            {"learner_profile_id": learner_profile_id, "request_id": request_id_var.get()},
             {"jobId": f"{learner_profile_id}:{session_date}"},
         )
 

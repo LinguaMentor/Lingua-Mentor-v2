@@ -39,6 +39,10 @@ RUN mkdir -p /app/keys && chown -R app:app /app
 USER app
 EXPOSE 8000
 
+# The commit the image is built from, for error reports. Late, so a new commit only changes this layer.
+ARG SENTRY_RELEASE=
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
+
 # Healthcheck against the app's own HTTP endpoint.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)" || exit 1

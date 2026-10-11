@@ -34,10 +34,10 @@ The deploy workflow already rolls back by itself when the post-deploy check fail
    ```bash
    mv images.env images.env.rolled-back
    cp images.env.previous images.env
-   docker compose --env-file images.env up -d --wait
+   docker compose --env-file /etc/linguamentor/staging.env --env-file images.env up -d --wait
    ```
 
-   `--wait` returns only when every container reports healthy, and exits with an error if one does not. Compose recreates only the containers whose image changed, and pulls any image by digest that is no longer on the server. Healthy here means alive: it says nothing about whether the release works, which is what step 4 is for.
+   `staging.env` supplies each service's error-reporting DSN; without it Compose recreates every service with reporting off. `--wait` returns only when every container reports healthy, and exits with an error if one does not. Compose recreates only the containers whose image changed, and pulls any image by digest that is no longer on the server. Healthy here means alive: it says nothing about whether the release works, which is what step 4 is for.
 
 4. Check it, from your laptop in the repository root:
 

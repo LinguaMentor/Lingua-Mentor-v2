@@ -1,8 +1,18 @@
 # Staging stack for the host setup.sh prepares; how to run it is in README.md.
+
+# Rotated, so container logs can never fill the disk: at most 5 files of 10 MB per container.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+# ${SENTRY_DSN} comes from the host's staging.env, which deploy.sh passes to Compose; unset turns reporting off.
 services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *logging
     # noeviction: BullMQ loses jobs if Redis can drop keys, so a full Redis should fail writes instead.
     command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
     volumes:
@@ -18,6 +28,7 @@ services:
   api-gateway:
     image: ${API_GATEWAY_IMAGE:?set in images.env}
     restart: unless-stopped
+    logging: *logging
     env_file:
       - path: /etc/linguamentor/staging.env
         required: false
@@ -25,6 +36,10 @@ services:
       PORT: "3000"
       REDIS_URL: redis://redis:6379
       AI_SERVICE_URL: http://ai-service:8000
+      SENTRY_ENVIRONMENT: staging
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      # Browser error reports are relayed to the same project.
+      SENTRY_WEB_DSN: ${SENTRY_DSN:-}
       JWT_PUBLIC_KEY_PATH: /app/keys/jwt_public.pem
       JWT_PRIVATE_KEY_PATH: /app/keys/jwt_private.pem
     volumes:
@@ -47,12 +62,15 @@ services:
   ai-service:
     image: ${AI_SERVICE_IMAGE:?set in images.env}
     restart: unless-stopped
+    logging: *logging
     env_file:
       - path: /etc/linguamentor/staging.env
         required: false
     environment:
       REDIS_URL: redis://redis:6379
       JWT_PUBLIC_KEY_PATH: /app/keys/jwt_public.pem
+      SENTRY_ENVIRONMENT: staging
+      SENTRY_DSN: ${SENTRY_DSN:-}
     volumes:
       # Verify-only service: it gets the public key, never the private one.
       - /etc/linguamentor/keys/jwt_public.pem:/app/keys/jwt_public.pem:ro
@@ -73,6 +91,7 @@ services:
     image: ${AI_SERVICE_IMAGE:?set in images.env}
     profiles: ["migrate"]
     restart: "no"
+    logging: *logging
     env_file:
       - path: /etc/linguamentor/staging.env
         required: false
@@ -81,12 +100,15 @@ services:
   worker:
     image: ${WORKER_IMAGE:?set in images.env}
     restart: unless-stopped
+    logging: *logging
     env_file:
       - path: /etc/linguamentor/staging.env
         required: false
     environment:
       REDIS_URL: redis://redis:6379
       AI_SERVICE_URL: http://ai-service:8000
+      SENTRY_ENVIRONMENT: staging
+      SENTRY_DSN: ${SENTRY_DSN:-}
     depends_on:
       redis:
         condition: service_healthy
@@ -97,9 +119,12 @@ services:
   web:
     image: ${WEB_IMAGE:?set in images.env}
     restart: unless-stopped
+    logging: *logging
     environment:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
+      SENTRY_ENVIRONMENT: staging
+      SENTRY_DSN: ${SENTRY_DSN:-}
     # Loopback only: cloudflared on the host is the one way in.
     ports:
       - "127.0.0.1:3000:3000"

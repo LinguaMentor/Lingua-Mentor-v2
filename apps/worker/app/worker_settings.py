@@ -5,13 +5,11 @@ producer and this registry are the two ends of the same wire), and each name
 matches its module in app/tasks/ for easy tracing (see README).
 """
 
-from collections.abc import Awaitable, Callable
-from typing import Any
-
 import asyncpg
 import httpx
 from bullmq import Queue
 
+from app.monitoring import Processor, with_job_context
 from app.tasks import (
     appeal_eval_task,
     daily_session_generation_task,
@@ -24,8 +22,6 @@ QUEUE_APPEAL_EVAL = "appeal_eval"
 QUEUE_SRS_BATCH_GENERATION = "srs_batch_generation"
 QUEUE_DAILY_SESSION_GENERATION = "daily_session_generation"
 
-Processor = Callable[[Any, str], Awaitable[Any]]
-
 
 def build_queue_registry(
     pool: asyncpg.Pool,
@@ -33,7 +29,7 @@ def build_queue_registry(
     fanout_queue: Queue,
     active_within_days: int,
 ) -> dict[str, Processor]:
-    return {
+    registry = {
         QUEUE_WRITING_EVAL: writing_eval_task.make_processor(pool, http),
         QUEUE_APPEAL_EVAL: appeal_eval_task.make_processor(pool, http),
         # The 2AM job the gateway schedules; it enqueues onto the queue below.
@@ -43,3 +39,4 @@ def build_queue_registry(
         QUEUE_DAILY_SESSION_GENERATION: daily_session_generation_task.make_processor(pool, http),
         # Later slices: calibration_recompute
     }
+    return {name: with_job_context(processor) for name, processor in registry.items()}

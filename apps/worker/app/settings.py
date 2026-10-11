@@ -15,6 +15,10 @@ class Settings:
     concurrency: int = 2
     # ADR 0009 §2.2 — pre-generate only for learners who actually open the app.
     pregeneration_active_window_days: int = 14
+    # Error reports go to Bugsink when a DSN is set; the release is the image's commit.
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
+    sentry_release: str = ""
 
 
 def _load_dotenv() -> None:
@@ -47,4 +51,7 @@ def load_settings() -> Settings:
         pregeneration_active_window_days=int(
             os.environ.get("PREGENERATION_ACTIVE_WINDOW_DAYS", "14")
         ),
+        sentry_dsn=os.environ.get("SENTRY_DSN", ""),
+        sentry_environment=os.environ.get("SENTRY_ENVIRONMENT", "development"),
+        sentry_release=os.environ.get("SENTRY_RELEASE", ""),
     )

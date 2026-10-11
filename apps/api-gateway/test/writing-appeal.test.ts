@@ -62,7 +62,7 @@ describe("POST /api/v1/writing/appeal/:session_id", () => {
 		expect(appealQueue.jobs).toHaveLength(1);
 		expect(appealQueue.jobs[0]).toEqual({
 			name: "evaluate",
-			data: { appeal_id: APPEAL_ID },
+			data: { appeal_id: APPEAL_ID, request_id: res.headers["x-request-id"] },
 			opts: { jobId: APPEAL_ID },
 		});
 

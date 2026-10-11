@@ -47,10 +47,10 @@ Set `TUNNEL_CREDENTIALS_FILE` in `.env.monitoring` to `./<tunnel uuid>.json`. Ru
 
 Then open `https://errors.<domain>`, pass Access, sign in as the superuser, and:
 
-1. Create one project per environment (`staging` now; production's comes with its own setup). Each has its own key.
+1. Create one project per environment (`staging` now; production's comes with its own setup). Each has its own key, and staging errors never reach production's alerts. The services of an environment share its project and are told apart by the `service` tag.
 2. Add the Telegram alert: Projects, the project's megaphone icon (Alerting Settings), Add, Telegram. Enter the bot token and the chat ID, save, then press Test and check the group. The token is stored in Bugsink's database, so it is also in the backups; revoke it with @BotFather if either leaks.
 3. Invite the team: open the team, then Members, Invite Member. Without email, Bugsink shows an invite link to hand over yourself.
-4. Copy the project's DSN and replace the host with the private address (`http://<key>@<private ip>:8000/<project id>`). That form is what the services use.
+4. Copy the project's DSN and replace the host with the private address (`http://<key>@<private ip>:8000/<project id>`). That form is what the services use. Store it as the `SENTRY_DSN` secret of the GitHub environment (see `infra/staging/README.md`).
 
 ## Checks
 
@@ -77,7 +77,9 @@ curl -s http://127.0.0.1:8000/health/ready
 
 **Management commands.** `sudo bugsink-manage <command>` runs as the `bugsink` user with the service settings.
 
-**Backups.** At 02:30 UTC `bugsink-backup` copies the database with `sqlite3 .backup`, checks the copy, compresses it and uploads `bugsink-<timestamp>.sqlite3.gz` to `<bucket>/bugsink/`. Backups older than 30 days are deleted. A failed run shows in `systemctl status bugsink-backup`; nothing else alerts on it yet. Run one by hand with `sudo systemctl start bugsink-backup`.
+**Backups.** At 02:30 UTC `bugsink-backup` copies the database with `sqlite3 .backup`, checks the copy, compresses it and uploads `bugsink-<timestamp>.sqlite3.gz` to `<bucket>/bugsink/`. Backups older than 30 days are deleted. Run one by hand with `sudo systemctl start bugsink-backup`.
+
+**Backup alert.** When `BACKUP_HEARTBEAT_URL` is set, each run pings a healthchecks.io check: the URL on success, `<URL>/fail` on any failure. The check alerts the team's Telegram group on a failure at once, and when a day plus 2 hours passes with no success, which covers a run that never started. Set up once on healthchecks.io (a free account is enough: 20 checks, no card): a check `bugsink-backup` with a period of 1 day and a grace of 2 hours, and the Telegram integration added to the group. Put its ping URL in `.env.monitoring` and run `setup.sh` again. A second check, `database-backup`, waits for the nightly database backup (#75) the same way; a check that has never been pinged does not alert.
 
 **Restore.** On the server (a fresh one after `setup.sh`, or the same one):
 

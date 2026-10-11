@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     db_pool_min_size: int = 1
     db_pool_max_size: int = 10
 
+    # Error reports go to Bugsink when a DSN is set; the release is the image's commit.
+    sentry_dsn: str = ""
+    sentry_environment: str = "development"
+    sentry_release: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

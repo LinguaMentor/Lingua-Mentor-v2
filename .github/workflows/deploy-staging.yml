@@ -44,7 +44,7 @@ jobs:
             scope: worker
             context: apps/worker
             dockerfile: apps/worker/Dockerfile
-          # No build arguments: the image carries no environment address and is the one production will get.
+          # The image carries no environment address and is the one production will get.
           - app: web
             scope: frontend
             context: .
@@ -76,6 +76,8 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: ghcr.io/${{ steps.owner.outputs.lc }}/lingumentor-${{ matrix.app }}:${{ github.sha }}
+          # Error reports name the commit they came from.
+          build-args: SENTRY_RELEASE=${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -178,9 +180,10 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
           JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           {
-            for name in DATABASE_URL JWT_PRIVATE_KEY JWT_PUBLIC_KEY; do
+            for name in DATABASE_URL JWT_PRIVATE_KEY JWT_PUBLIC_KEY SENTRY_DSN; do
               printf '%s=%s\n' "$name" "$(printf '%s' "${!name}" | base64 -w0)"
             done
           } | ssh staging "${REMOTE_DIR}/deploy.sh sync-secrets"
