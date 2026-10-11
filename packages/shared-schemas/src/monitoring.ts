@@ -32,7 +32,8 @@ interface ScrubbableEvent {
 
 // A query string or fragment can hold a reset token or an email; the path is enough to find the bug.
 function withoutQuery(url: string): string {
-	return url.replace(/[?#].*$/, "");
+	const cut = url.search(/[?#]/);
+	return cut === -1 ? url : url.slice(0, cut);
 }
 
 /** Removes request bodies, cookies, headers, query strings, user fields, extras and frame variables. */

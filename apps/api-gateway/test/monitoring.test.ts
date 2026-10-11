@@ -73,6 +73,15 @@ describe("error reports", () => {
 });
 
 describe("scrubErrorEvent", () => {
+	it("cuts a hostile URL at the first query or fragment mark, in linear time", () => {
+		const hostile = `https://staging.example/a?${"#".repeat(200_000)}\nsecret`;
+		const started = performance.now();
+		const event = scrubErrorEvent({ request: { url: hostile } });
+
+		expect(event.request).toEqual({ url: "https://staging.example/a" });
+		expect(performance.now() - started).toBeLessThan(500);
+	});
+
 	it("keeps the error and the path, and drops everything that can carry personal data", () => {
 		const event = scrubErrorEvent({
 			request: {
