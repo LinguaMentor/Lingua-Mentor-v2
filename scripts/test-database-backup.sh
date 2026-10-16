@@ -26,7 +26,8 @@ expect() { # description, expected, actual
 }
 
 docker run -d --name "$PG" -e POSTGRES_PASSWORD=test -p "127.0.0.1:$PG_PORT:5432" postgres:18-alpine >/dev/null
-for _ in $(seq 60); do docker exec "$PG" pg_isready -U postgres -q 2>/dev/null && break; sleep 1; done
+# Over TCP: the image's first-run server answers on its socket only, then restarts, so the socket check passes too early.
+for _ in $(seq 60); do docker exec "$PG" pg_isready -h 127.0.0.1 -U postgres -q 2>/dev/null && break; sleep 1; done
 sql() { docker exec -i "$PG" psql -U postgres -v ON_ERROR_STOP=1 -q -At -d "$1"; }
 url() { echo "postgresql://postgres:test@127.0.0.1:$PG_PORT/$1?sslmode=disable"; }
 
