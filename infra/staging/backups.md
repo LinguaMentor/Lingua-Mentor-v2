@@ -1,6 +1,6 @@
 # Database backups and restore
 
-Neon's free plan keeps 6 hours of history, so the staging database is also dumped every night to its own private R2 bucket and kept for 30 days. A restore from those dumps has been performed and timed (see the end of this page).
+Neon's free plan keeps 6 hours of history, so the staging database is also dumped every night to its own private R2 bucket and kept for 30 days. A restore from those dumps has been performed and timed: 17 seconds for the whole staging database on 2026-10-16 (see the end of this page).
 
 ## What runs
 
@@ -62,4 +62,4 @@ Run **Back up the database** by hand with **Then restore the newest backup into 
 
 | Date | Dump | Size | Tables | Restore time | Row counts | Run |
 | ---- | ---- | ---- | ------ | ------------ | ---------- | --- |
-| to be recorded from the first drill after this change merges | | | | | | |
+| 2026-10-16 | `staging-20261016T113830Z.dump` | 48 KB | 17 | 17 s, of which 1 s downloading | Match in all 17 tables | [38895093567](https://github.com/LinguaMentor/Lingua-Mentor-v2/actions/runs/38895093567) |
