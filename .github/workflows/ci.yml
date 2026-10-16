@@ -27,6 +27,7 @@ jobs:
       ai-service: ${{ steps.filter.outputs.ai-service }}
       worker: ${{ steps.filter.outputs.worker }}
       local-compose: ${{ steps.filter.outputs.local-compose }}
+      e2e: ${{ steps.filter.outputs.e2e }}
       staging-compose: ${{ steps.filter.outputs.staging-compose }}
       smoke-test: ${{ steps.filter.outputs.smoke-test }}
       staging-deploy: ${{ steps.filter.outputs.staging-deploy }}
@@ -73,7 +74,7 @@ jobs:
               - ".github/workflows/ci.yml"
               - ".github/workflows/ci-worker.yml"
               - ".github/workflows/ci-image.yml"
-            local-compose:
+            local-compose: &local-stack
               - "infra/docker-compose.yml"
               - "scripts/test-local-compose.sh"
               - "apps/api-gateway/**"
@@ -86,6 +87,9 @@ jobs:
               - "pnpm-workspace.yaml"
               - ".dockerignore"
               - ".github/workflows/ci.yml"
+            e2e:
+              - *local-stack
+              - "e2e/**"
             staging-compose:
               - "infra/staging/docker-compose.yml"
               - ".github/workflows/ci.yml"
@@ -176,6 +180,45 @@ jobs:
       - uses: actions/checkout@v7
       - name: Run local Compose smoke test
         run: bash scripts/test-local-compose.sh
+
+  # The user journeys, in a real browser against the whole local stack with the fake LLM.
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      # corepack before the cached setup-node, which needs pnpm on PATH to find its store.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+      - run: corepack enable
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile --filter e2e
+      - run: pnpm exec prettier --check e2e
+      - run: pnpm --filter e2e typecheck
+      - name: Install Chromium
+        run: pnpm --filter e2e exec playwright install --with-deps chromium
+      - name: Start the local stack
+        run: docker compose -f infra/docker-compose.yml up --build -d --wait --wait-timeout 180
+      - name: Run the journeys
+        run: pnpm --filter e2e test
+      - name: Save the container logs
+        if: failure()
+        run: mkdir -p e2e/test-results && docker compose -f infra/docker-compose.yml logs --no-color > e2e/test-results/compose.log 2>&1
+      - name: Upload the traces, screenshots and logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-results
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
+          retention-days: 14
 
   staging-compose:
     needs: changes
@@ -332,6 +375,7 @@ jobs:
         image-worker,
         image-frontend,
         local-compose,
+        e2e,
         staging-compose,
         smoke-test,
         staging-deploy,

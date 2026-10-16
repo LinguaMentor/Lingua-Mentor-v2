@@ -5,23 +5,31 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.v1.routers import adaptive_learning, mentor, persona, placement, writing_eval
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.monitoring import init_monitoring
 from app.core.request_id import RequestIdMiddleware
 from app.db.session import close_pool, create_pool
+from app.providers.llm.base import LLMProvider
+from app.providers.llm.fake_provider import FakeProvider
 from app.providers.llm.groq_provider import GroqProvider
 
 configure_logging()
 init_monitoring(get_settings())
 
 
+def build_llm_provider(settings: Settings) -> LLMProvider:
+    if settings.llm_provider == "fake":
+        return FakeProvider()
+    return GroqProvider(settings.groq_api_key)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     await create_pool()
-    app.state.llm_provider = GroqProvider(settings.groq_api_key)
+    app.state.llm_provider = build_llm_provider(settings)
     try:
         yield
     finally:

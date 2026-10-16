@@ -102,15 +102,29 @@ stored_email=$("${COMPOSE[@]}" exec -T postgres psql -U linguamentor -d linguame
 	exit 1
 }
 
-# One request through the gateway, the worker and ai-service; with no LLM key scoring fails, which is still logged under its id.
+# One request through the gateway, the worker and ai-service, scored by the fake LLM with no key.
 request_id="compose-smoke-$RANDOM-$$"
 essay_marker="ESSAY-MARKER-$RANDOM$RANDOM"
-status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+submission=$(mktemp)
+status=$(curl --silent --show-error --output "$submission" --write-out '%{http_code}' \
 	-X POST http://127.0.0.1:3000/api/v1/writing/submit \
 	-H 'content-type: application/json' -H "authorization: Bearer $token" -H "x-request-id: $request_id" \
 	-d "{\"exam_type\":\"ielts_academic\",\"prompt_text\":\"Discuss both views.\",\"essay_text\":\"$essay_marker Cities grow while villages empty.\"}")
 [[ "$status" == 202 ]] || {
 	printf 'Expected essay submission HTTP 202, got %s\n' "$status" >&2
+	exit 1
+}
+session_id=$(jq -r .session_id "$submission")
+
+result=""
+for _ in $(seq 60); do
+	result=$(curl --silent --show-error --fail -H "authorization: Bearer $token" \
+		"http://127.0.0.1:3000/api/v1/writing/result/$session_id")
+	[[ $(jq -r .status <<<"$result") =~ ^(pending|processing)$ ]] || break
+	sleep 1
+done
+[[ $(jq -r '[.status, .overall_band_score] | join(" ")' <<<"$result") == "scored 6.00" ]] || {
+	printf 'Expected the essay scored 6.00 by the fake LLM, got: %s\n' "$result" >&2
 	exit 1
 }
 

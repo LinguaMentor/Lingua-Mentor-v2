@@ -37,6 +37,9 @@ npm-debug.log*
 coverage/
 .pytest_cache/
 htmlcov/
+# Playwright's traces, screenshots and HTML report.
+test-results/
+playwright-report/
 
 # --- misc ---
 .turbo/
