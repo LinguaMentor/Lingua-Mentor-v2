@@ -10,6 +10,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
 
@@ -43,5 +44,15 @@ jobs:
 
       - run: pnpm --filter frontend lint
       - run: pnpm --filter frontend typecheck
-      - run: pnpm --filter frontend test
+      - run: pnpm --filter frontend test:coverage
+
+      # Report only for now: no threshold until there is a baseline.
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-frontend
+          path: apps/frontend/coverage/
+          retention-days: 14
+
       - run: pnpm --filter frontend build

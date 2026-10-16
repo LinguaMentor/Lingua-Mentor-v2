@@ -21,7 +21,7 @@ jobs:
   backup:
     name: Back up ${{ matrix.environment }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:

@@ -37,6 +37,8 @@ npm-debug.log*
 coverage/
 .pytest_cache/
 htmlcov/
+# coverage.py data file.
+.coverage
 # Playwright's traces, screenshots and HTML report.
 test-results/
 playwright-report/

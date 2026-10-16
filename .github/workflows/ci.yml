@@ -21,6 +21,7 @@ permissions:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       api-gateway: ${{ steps.filter.outputs.api-gateway }}
       frontend: ${{ steps.filter.outputs.frontend }}
@@ -36,7 +37,7 @@ jobs:
     steps:
       # Toolchain and CI files count too, so changing how a service is built
       # re-verifies it even when none of its source changed.
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
@@ -176,6 +177,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.local-compose == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: Run local Compose smoke test
@@ -186,7 +188,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       # corepack before the cached setup-node, which needs pnpm on PATH to find its store.
@@ -224,6 +226,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.staging-compose == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - name: Validate staging Compose file
@@ -238,6 +241,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.smoke-test == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -252,6 +256,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.staging-deploy == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - name: Lint the deploy script and its test
@@ -266,6 +271,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.monitoring-backup == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - name: Lint the monitoring scripts
@@ -278,6 +284,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.database-backup == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - name: Lint the backup and restore scripts
@@ -291,12 +298,25 @@ jobs:
   security:
     uses: ./.github/workflows/ci-security.yml
 
-  # Squash merges use the PR title as the commit on main, so the title is what gets validated.
+  # Lists what the PR's dependency changes pull in, and fails on a high advisory in any of them.
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/dependency-review-action@v5.0.0
+        with:
+          fail-on-severity: high
+          # Dev tools run in CI and on laptops too; the default checks runtime packages only.
+          fail-on-scopes: runtime, development, unknown
+
+  # Squash merges into develop use the PR title as the commit, so the title is what gets validated.
   pr-title:
     name: PR title
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: amannn/action-semantic-pull-request@v6
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -334,6 +354,7 @@ jobs:
     # Dependabot has no ticket; the sprint release PR (develop -> main) covers many.
     if: github.event.pull_request.user.login != 'dependabot[bot]' && !(github.head_ref == 'develop' && github.base_ref == 'main')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
@@ -382,10 +403,12 @@ jobs:
         monitoring-backup,
         database-backup,
         security,
+        dependency-review,
         pr-title,
         pr-ticket,
       ]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check upstream results
         env:

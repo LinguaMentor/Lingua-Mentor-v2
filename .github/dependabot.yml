@@ -1,45 +1,26 @@
 version: 2
 
-# Dependency updates for every ecosystem in this polyglot monorepo. Nothing
-# was watching dependencies before this file existed.
-#
-# Note this file only controls *version* update PRs. Vulnerability alerts and
-# automatic security-fix PRs are a separate repo setting:
-#   Settings → Advanced Security → enable "Dependabot alerts" and
-#   "Dependabot security updates".
-# Without those toggled on, this file will keep you current but will not
-# react to a CVE, which is the half that actually matters.
-#
-# Deliberately no `pnpm audit` / `pip-audit` step in CI: Dependabot alerts
-# cover the same ground across all four ecosystems and arrive as an
-# actionable PR rather than a red build with no fix attached. Two systems
-# doing one job is how one of them ends up ignored.
+# Version updates only; security fix PRs come from the repo's Dependabot settings, and CI's dependency review blocks new advisories.
 updates:
-  # --- JS/TS: one entry covers the whole pnpm workspace ---
-  # (frontend, api-gateway, and packages/* all resolve through the root
-  # lockfile, so Dependabot reads the workspace from here.)
+  # The root lockfile covers the whole pnpm workspace.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
     groups:
-      # Patch/minor churn from a dozen small packages is the fastest way to
-      # train yourself to rubber-stamp Dependabot PRs without reading them.
-      # Grouping them into one PR per week keeps each PR worth reviewing.
+      # One PR a week for small bumps, so it actually gets read.
       minor-and-patch:
         update-types: ["minor", "patch"]
     ignore:
-      # Majors (next, react, tailwind, …) are migrations to plan, not weekly PRs.
-      # Security updates still arrive: update-types only filters version updates.
+      # Majors are planned migrations; security updates still come through.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
     labels: ["dependencies"]
     commit-message:
-      # Dependabot's PR title becomes the squash commit; the CI PR-title check needs a listed scope.
+      # The PR title becomes the squash commit, and CI's title check wants a scope.
       prefix: "chore(deps)"
 
-  # --- Python: poetry.lock per service ---
   - package-ecosystem: "pip"
     directory: "/apps/ai-service"
     schedule:
@@ -49,7 +30,6 @@ updates:
       minor-and-patch:
         update-types: ["minor", "patch"]
     ignore:
-      # Same as npm: no major-version PRs; security updates unaffected.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
     labels: ["dependencies"]
@@ -65,15 +45,13 @@ updates:
       minor-and-patch:
         update-types: ["minor", "patch"]
     ignore:
-      # Same as npm: no major-version PRs; security updates unaffected.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
     labels: ["dependencies"]
     commit-message:
       prefix: "chore(deps)"
 
-  # --- Base images: node:24-slim / python:3.12-slim ---
-  # These carry OS-level CVEs that no application-dependency scanner sees.
+  # Base images carry OS fixes that no package scanner sees.
   - package-ecosystem: "docker"
     directories:
       - "/apps/api-gateway"
@@ -82,8 +60,7 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # Runtime bumps move together with .nvmrc, .python-version and CI.
-      # python 3.12 -> 3.14 counts as a minor, hence both types for python.
+      # Runtimes move with .nvmrc and .python-version; for Python, 3.12 to 3.14 is a "minor".
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]
       - dependency-name: "python"
@@ -92,9 +69,7 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  # --- The CI pipeline's own supply chain ---
-  # A compromised or abandoned third-party action runs with access to this
-  # repo's GITHUB_TOKEN and secrets, so it gets watched like any other dep.
+  # Actions are pinned to commit SHAs; Dependabot updates the SHA and the version comment together.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
