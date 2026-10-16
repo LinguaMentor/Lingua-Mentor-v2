@@ -131,14 +131,28 @@ docker compose --env-file /etc/linguamentor/staging.env --env-file images.env lo
 
 Bugsink drops events beyond 1,000 per 5 minutes per project without saying so, so a quiet project does not prove a healthy service. The uptime check covers outages.
 
-**Uptime.** Grafana Cloud's synthetic monitoring checks `https://staging.<domain>/` (the web app) and `https://staging.<domain>/api/v1/health` (the gateway) every minute, with a Cloudflare Access service token of their own in the request headers. An alert rule posts to the team's Telegram group when either check fails for 2 minutes in a row. Set up once:
+**Uptime.** Grafana Cloud synthetic monitoring checks `https://staging.<domain>/` (web) and `https://staging.<domain>/api/v1/health` (gateway) every minute from one probe in Frankfurt, with an Access service token of its own. Each check alerts when at least 2 of its last 5 runs fail, and the alert goes to the Telegram group as the contact point `telegram-team`.
 
-1. Cloudflare Zero Trust: create a service token `linguamentor-uptime` and add a Service Auth policy for it to the `staging.<domain>` application only. It must not reach `ssh-staging`.
-2. Grafana Cloud, Testing & synthetics, Synthetics, Checks, Create a new check, API Endpoint: two HTTP checks, `staging-web` on `https://staging.<domain>/` and `staging-api` on `https://staging.<domain>/api/v1/health`. In Request options add the headers `CF-Access-Client-Id` and `CF-Access-Client-Secret` with the token's values. Execution: frequency 1m and exactly one probe, Frankfurt. Grafana estimates 44,640 executions a month for each, so about 89,000 for two, under the free plan's 100,000; a second probe would go over.
-3. Grafana, Alerting, Contact points: a Telegram contact point with the bot token and chat id of the Bugsink alerts.
-4. Grafana, Alerting, Alert rules: one rule on `probe_success` for the two checks, evaluated every minute, firing when the last value is 0 for 2 minutes, sent to that contact point.
+Measured on 2026-10-13 by stopping the tunnel at 15:48:46 UTC: the alert fired at 15:50:50 and the Telegram message went out at 15:51:20, so 2 min 34 s after the outage. The tunnel came back at 15:56:46 and the "Resolved" message followed at 16:06:20, about 9.5 minutes later, because the alert looks at a 5-minute window and Grafana sends updates every 5 minutes.
 
-To test it, stop the tunnel on the host (`sudo systemctl stop cloudflared`) and wait for the alert; start it again afterwards.
+Set up once, in this order:
+
+1. Cloudflare Zero Trust, Access controls, Service credentials: a service token `linguamentor-uptime`. Under Policies, a reusable policy `Uptime check token` with the action Service Auth that includes that token, added to the application `linguamentor-staging-web` only. Never to `linguamentor-staging-ssh`, and never by editing the `CI service token` policy.
+2. Grafana Cloud, Testing & synthetics, Synthetics, Checks, Create a new check, API Endpoint, twice: `staging-api` and `staging-web`.
+   - Request options, Options: the headers `CF-Access-Client-Id` and `CF-Access-Client-Secret` with the token's values, and **Follow redirects off**. With it on, a rejected token follows the redirect to Access's login page, gets a 200 and shows "up".
+   - Execution: exactly one probe (Frankfurt) at 1m. Grafana estimates 44,640 executions a month for each check, about 89,000 for both, under the free plan's 100,000, and a second probe would go over.
+   - Alerting: tick "Alert if at least 2 of 5 probe executions fail in the last 5 min".
+3. Grafana, Alerting, Contact points: `telegram-team`, a Telegram integration with the bot token and chat id of the Bugsink alerts. Use Test and check the group.
+4. Grafana, Alerting, Notification policies: set the Default policy's contact point to `telegram-team`. A new stack ships with it set to `empty`, which drops every alert.
+
+Grafana shows the token's header values in plain text to anyone who can edit the checks. An unauthenticated request to staging gets a 302 from Access even while the tunnel is down, so to test from outside send the token headers: 200 means up, anything else means down.
+
+To repeat the drill, connect as `ubuntu` with the admin key (the `deploy` user has only CI's key). SSH runs through the tunnel you are stopping, so set the restart timer first and expect your session to drop:
+
+```bash
+sudo systemd-run --on-active=8m --unit=drill-restart-cloudflared systemctl start cloudflared
+sudo systemctl stop cloudflared
+```
 
 ## If the tunnel or Docker is down
 

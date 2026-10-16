@@ -30,6 +30,7 @@ jobs:
       staging-compose: ${{ steps.filter.outputs.staging-compose }}
       smoke-test: ${{ steps.filter.outputs.smoke-test }}
       staging-deploy: ${{ steps.filter.outputs.staging-deploy }}
+      monitoring-backup: ${{ steps.filter.outputs.monitoring-backup }}
     steps:
       # Toolchain and CI files count too, so changing how a service is built
       # re-verifies it even when none of its source changed.
@@ -97,6 +98,10 @@ jobs:
               - "infra/staging/docker-compose.yml"
               - "scripts/test-staging-deploy.sh"
               - ".github/workflows/**"
+            monitoring-backup:
+              - "infra/monitoring/**"
+              - "scripts/test-monitoring-backup.sh"
+              - ".github/workflows/ci.yml"
 
   api-gateway:
     needs: changes
@@ -205,6 +210,18 @@ jobs:
       - name: Run the deploy script against a copy of the staging stack
         run: bash scripts/test-staging-deploy.sh
 
+  # The monitoring server's backup and its heartbeat run unattended at night, so they are tested like code.
+  monitoring-backup:
+    needs: changes
+    if: needs.changes.outputs.monitoring-backup == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint the monitoring scripts
+        run: shellcheck infra/monitoring/*.sh scripts/test-monitoring-backup.sh
+      - name: Run the backup script against stubs and a stand-in Grafana
+        run: bash scripts/test-monitoring-backup.sh
+
   # Never path-filtered: a secret can land in any file.
   security:
     uses: ./.github/workflows/ci-security.yml
@@ -296,6 +313,7 @@ jobs:
         staging-compose,
         smoke-test,
         staging-deploy,
+        monitoring-backup,
         security,
         pr-title,
         pr-ticket,

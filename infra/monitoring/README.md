@@ -79,7 +79,14 @@ curl -s http://127.0.0.1:8000/health/ready
 
 **Backups.** At 02:30 UTC `bugsink-backup` copies the database with `sqlite3 .backup`, checks the copy, compresses it and uploads `bugsink-<timestamp>.sqlite3.gz` to `<bucket>/bugsink/`. Backups older than 30 days are deleted. Run one by hand with `sudo systemctl start bugsink-backup`.
 
-**Backup alert.** When `BACKUP_HEARTBEAT_URL` is set, each run pings a healthchecks.io check: the URL on success, `<URL>/fail` on any failure. The check alerts the team's Telegram group on a failure at once, and when a day plus 2 hours passes with no success, which covers a run that never started. Set up once on healthchecks.io (a free account is enough: 20 checks, no card): a check `bugsink-backup` with a period of 1 day and a grace of 2 hours, and the Telegram integration added to the group. Put its ping URL in `.env.monitoring` and run `setup.sh` again. A second check, `database-backup`, waits for the nightly database backup (#75) the same way; a check that has never been pinged does not alert.
+**Backup alert.** When the three `BACKUP_PUSH_*` values are set, each good run pushes one data point, `backup_success{target="bugsink"}`, to Grafana Cloud. A failed run pushes nothing, and neither does a run that never started, so one alert rule covers both. Set up once in Grafana Cloud:
+
+1. Cloud portal, your stack, the Prometheus (metrics) card, Details: note the remote write URL's host and the numeric instance ID. `BACKUP_PUSH_URL` is `https://<that host>/api/v1/push/influx/write` (the path without `/write` is only for Telegraf, which adds it), and the instance ID is `BACKUP_PUSH_USER`.
+2. Cloud portal, Administration, Access policies: create a policy limited to your stack with only the scope `metrics:write`, add a token to it, and use that token as `BACKUP_PUSH_TOKEN`. It can write metrics and nothing else.
+3. Put the three values in `.env.monitoring` and run `setup.sh` again, then `sudo systemctl start bugsink-backup` and check `backup_success` shows up in Grafana, Explore.
+4. Only once that point shows in Explore: Grafana, Alerting, Alert rules, a rule on `absent_over_time(backup_success{target="bugsink"}[26h])` with the condition "above 0", evaluated every hour with no pending period, and "Alert state if no data" set to **Normal**. A healthy backup makes the query return nothing, so the default no-data handling would alert every day. It goes to the default contact point, `telegram-team` (see `infra/staging/README.md`). A day without a success, plus 2 hours of slack, alerts.
+
+The database backup (#75) pushes the same metric with `target="database"` and gets its own rule.
 
 **Restore.** On the server (a fresh one after `setup.sh`, or the same one):
 

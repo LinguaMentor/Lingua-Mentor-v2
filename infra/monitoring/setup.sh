@@ -52,7 +52,9 @@ preflight() {
   SMTP_USER=${SMTP_USER:-}
   SMTP_PASSWORD=${SMTP_PASSWORD:-}
   MAIL_FROM=${MAIL_FROM:-}
-  BACKUP_HEARTBEAT_URL=${BACKUP_HEARTBEAT_URL:-}
+  BACKUP_PUSH_URL=${BACKUP_PUSH_URL:-}
+  BACKUP_PUSH_USER=${BACKUP_PUSH_USER:-}
+  BACKUP_PUSH_TOKEN=${BACKUP_PUSH_TOKEN:-}
 
   local name
   for name in DOMAIN TUNNEL_ID TUNNEL_CREDENTIALS_FILE APP_SUBNET_CIDR \
@@ -66,7 +68,7 @@ preflight() {
     done
   fi
   for name in DOMAIN TUNNEL_ID TUNNEL_CREDENTIALS_FILE APP_SUBNET_CIDR SMTP_HOST SMTP_USER SMTP_PASSWORD MAIL_FROM \
-    R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET BACKUP_HEARTBEAT_URL; do
+    R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET BACKUP_PUSH_URL BACKUP_PUSH_USER BACKUP_PUSH_TOKEN; do
     # The values land in env files that the shell and systemd both parse, inside double quotes.
     [[ ${!name} != *[\"\$\`\\]* ]] || fail "$name must not contain \" \$ \` or \\"
   done
@@ -75,7 +77,14 @@ preflight() {
   [[ $TUNNEL_ID =~ ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$ ]] || fail "TUNNEL_ID '$TUNNEL_ID' is not a UUID"
   [[ -f $TUNNEL_CREDENTIALS_FILE ]] || fail "$TUNNEL_CREDENTIALS_FILE does not exist"
   [[ $APP_SUBNET_CIDR =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]] || fail "APP_SUBNET_CIDR must look like 10.0.1.0/24"
-  [[ -z $BACKUP_HEARTBEAT_URL || $BACKUP_HEARTBEAT_URL =~ ^https://[^[:space:]]+$ ]] || fail "BACKUP_HEARTBEAT_URL must be an https URL"
+  # The backup heartbeat is optional: all three values or none of them.
+  if [[ -n $BACKUP_PUSH_URL$BACKUP_PUSH_USER$BACKUP_PUSH_TOKEN ]]; then
+    for name in BACKUP_PUSH_URL BACKUP_PUSH_USER BACKUP_PUSH_TOKEN; do
+      [[ -n ${!name} ]] || fail "$name is empty in $INPUTS_FILE; set all three BACKUP_PUSH values or none"
+    done
+    [[ $BACKUP_PUSH_URL =~ ^https://[^[:space:]]+/api/v1/push/influx/write$ ]] || fail "BACKUP_PUSH_URL must end in /api/v1/push/influx/write"
+    [[ $BACKUP_PUSH_USER =~ ^[0-9]+$ ]] || fail "BACKUP_PUSH_USER must be the numeric metrics instance ID"
+  fi
 
   PUBLIC_HOSTNAME="errors.${DOMAIN}"
   PRIVATE_IP=$(ip -4 route get 1.1.1.1 | awk '{for (i = 1; i <= NF; i++) if ($i == "src") print $(i + 1)}')
@@ -187,7 +196,9 @@ RCLONE_S3_SECRET_ACCESS_KEY="${R2_SECRET_ACCESS_KEY}"
 RCLONE_S3_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
 RCLONE_S3_NO_CHECK_BUCKET="true"
 BACKUP_REMOTE=":s3:${R2_BUCKET}/bugsink"
-HEARTBEAT_URL="${BACKUP_HEARTBEAT_URL}"
+PUSH_URL="${BACKUP_PUSH_URL}"
+PUSH_USER="${BACKUP_PUSH_USER}"
+PUSH_TOKEN="${BACKUP_PUSH_TOKEN}"
 EOF
 
   write_file "$BUGSINK_HOME/bugsink_conf.py" 0644 "root:root" <"$SCRIPT_DIR/bugsink_conf.py" || true
