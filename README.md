@@ -16,6 +16,7 @@ managed independently.
     packages/
       shared-types/    TS types shared between frontend and api-gateway
       shared-schemas/  zod schemas shared between frontend and api-gateway
+    e2e/               Playwright journeys against the Compose stack
     infra/             docker-compose, staging host setup, Coolify config
     docs/              pointer to the product documents (kept private)
     scripts/           one-off operational scripts
@@ -35,6 +36,8 @@ docker compose -f infra/docker-compose.yml up --build -d
 ```
 
 Compose starts PostgreSQL 18, Redis, the API gateway, AI service, worker, and the web app. It generates development JWT keys in a named volume and applies Alembic migrations before starting the apps. The first run builds the images; later starts reuse them.
+
+The AI service runs on the fake LLM provider here: every essay is scored 6.0 in each category, with no key and no network. Set `LLM_PROVIDER` and `GROQ_API_KEY` under `ai-service` to try a real model.
 
 Check service status and logs:
 
@@ -66,6 +69,17 @@ pnpm dev:worker
 ```
 
 Queue-backed features need the gateway, AI service, and worker running together. The Compose web service is a production image; use `pnpm dev:frontend` when you want hot reload.
+
+### End-to-end tests
+
+The Playwright journeys in `e2e/tests/` run in Chromium against the Compose stack above, which must be up:
+
+```bash
+pnpm --filter e2e exec playwright install chromium   # once
+pnpm --filter e2e test
+```
+
+A failure leaves a trace and a screenshot in `e2e/test-results/`; open a trace with `pnpm --filter e2e exec playwright show-trace <path to trace.zip>`. CI runs the same journeys on every pull request that touches an app, the Compose file or `e2e/`, and a failed run uploads them, with the containers' logs, as the `e2e-results` artifact on the run's summary page.
 
 ## Working on the project
 

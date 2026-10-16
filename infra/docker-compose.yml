@@ -69,9 +69,7 @@ services:
         condition: service_healthy
 
   api-gateway:
-    # Root context, not ../apps/api-gateway — it depends on the workspace
-    # package @lingumentor/shared-schemas, so the build needs to see the
-    # whole monorepo, not just this one app's directory. See the Dockerfile.
+    # Root context: the gateway depends on the workspace package @lingumentor/shared-schemas.
     build:
       context: ..
       dockerfile: apps/api-gateway/Dockerfile
@@ -99,16 +97,12 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      # No curl/wget in node:24-slim (verified) — node's own http client is
-      # already on PATH, so this avoids installing a package into the
-      # runtime image just to run a health probe.
+      # node:24-slim has no curl or wget, so the probe uses Node's own http client.
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""]
       interval: 10s
       timeout: 3s
       retries: 5
       start_period: 10s
-    # Single Node process (ADR 0001 §2.2), no LLM/DB-heavy work of its own —
-    # the lightest of the three app containers.
     mem_limit: 512m
     cpus: 1.0
 
@@ -119,7 +113,8 @@ services:
       DATABASE_URL: postgresql://linguamentor:linguamentor@postgres:5432/linguamentor
       REDIS_URL: redis://redis:6379
       JWT_PUBLIC_KEY_PATH: ./keys/jwt_public.pem
-      GROQ_API_KEY: ""
+      # Fixed replies, no key and no network: local runs and CI never call a real LLM.
+      LLM_PROVIDER: fake
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -134,17 +129,12 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      # Matches the HEALTHCHECK baked into apps/ai-service/Dockerfile —
-      # declared explicitly here too so `depends_on: condition:
-      # service_healthy` below has something to gate on without relying on
-      # Compose picking up the image-level default.
+      # The image's own probe, at a shorter interval so the worker starts sooner.
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
-    # Heaviest single container: async FastAPI + LLM request/response
-    # payloads + its own asyncpg pool (db_pool_max_size=10) against Neon.
     mem_limit: 1024m
     cpus: 1.5
 
@@ -164,11 +154,7 @@ services:
         condition: service_completed_successfully
       ai-service:
         condition: service_healthy
-    # No healthcheck: block here — worker has no HTTP surface to probe.
-    # apps/worker/Dockerfile bakes in a process-liveness HEALTHCHECK
-    # (checks /proc/1/cmdline for the worker process), which Compose picks
-    # up automatically from the image; nothing currently depends on
-    # worker's own health so there's no condition to gate here either.
+    # No HTTP surface to probe; the image's own healthcheck watches the process.
     mem_limit: 768m
     cpus: 1.0
 

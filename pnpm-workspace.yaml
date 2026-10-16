@@ -5,3 +5,4 @@ packages:
   - "apps/frontend"
   - "apps/api-gateway"
   - "packages/*"
+  - "e2e"

@@ -69,6 +69,8 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       JWT_PUBLIC_KEY_PATH: /app/keys/jwt_public.pem
+      # Production sets "production", which refuses the fake LLM at boot.
+      APP_ENV: staging
       SENTRY_ENVIRONMENT: staging
       SENTRY_DSN: ${SENTRY_DSN:-}
     volumes:

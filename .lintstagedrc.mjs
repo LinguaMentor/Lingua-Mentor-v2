@@ -28,6 +28,7 @@ export default {
 	],
 	"{apps/api-gateway,apps/frontend}/**/*.{json,css,mjs,cjs}": "prettier --write",
 	"packages/**/*.{ts,tsx,js,mjs,cjs,json}": "prettier --write",
+	"e2e/**/*.{ts,json}": "prettier --write",
 	"apps/ai-service/**/*.py": py("ai-service"),
 	"apps/worker/**/*.py": py("worker"),
 };
