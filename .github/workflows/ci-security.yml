@@ -10,6 +10,7 @@ permissions:
 jobs:
   secret-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       # fetch-depth: 0 — the default shallow clone would only expose the tip
       # commit, and the whole point is catching a secret introduced in an
@@ -20,19 +21,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Installed from a pinned release binary rather than gitleaks-action.
-      # The action is free for personal accounts but requires a paid
-      # GITLEAKS_LICENSE once a repo lives under a GitHub *organisation* —
-      # so the moment this repo moves into an org (which is what happens when
-      # a startup incorporates), the action would start failing CI for a
-      # licensing reason that has nothing to do with code. The binary has no
-      # such condition.
+      # The release binary, not gitleaks-action, which needs a paid licence for repos in an organisation.
       - name: Install gitleaks
         env:
           GITLEAKS_VERSION: "8.21.2"
+          # From the release's gitleaks_8.21.2_checksums.txt; pinned here, since whoever can swap the binary can swap that file.
+          GITLEAKS_SHA256: 5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba
         run: |
-          curl -sSL -o /tmp/gitleaks.tar.gz \
+          curl -sSLf -o /tmp/gitleaks.tar.gz \
             "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum --check --strict
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
           gitleaks version

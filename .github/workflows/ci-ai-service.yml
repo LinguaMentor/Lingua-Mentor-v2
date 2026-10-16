@@ -10,6 +10,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults:
       run:
         working-directory: apps/ai-service
@@ -25,7 +26,7 @@ jobs:
           python-version-file: ".python-version"
 
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
         with:
           version: "2.4.1" # matches the sandbox's verified poetry version
           virtualenvs-create: true
@@ -51,4 +52,13 @@ jobs:
       - run: poetry run ruff format --check .
       - run: poetry run ruff check .
       - run: poetry run mypy app
-      - run: poetry run pytest -q
+      - run: poetry run pytest -q --cov --cov-report=term --cov-report=html
+
+      # Report only for now: no threshold until there is a baseline.
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-ai-service
+          path: apps/ai-service/coverage/
+          retention-days: 14

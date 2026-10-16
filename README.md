@@ -70,6 +70,10 @@ pnpm dev:worker
 
 Queue-backed features need the gateway, AI service, and worker running together. The Compose web service is a production image; use `pnpm dev:frontend` when you want hot reload.
 
+### Test coverage
+
+`pnpm --filter api-gateway test:coverage` and `pnpm --filter frontend test:coverage` print a summary and write an HTML report to the app's `coverage/` folder; in `apps/ai-service` the same comes from `poetry run pytest --cov --cov-report=term --cov-report=html`. CI prints the same summary on every run and attaches the report as `coverage-<app>`, kept 14 days. Nothing fails on low coverage yet.
+
 ### End-to-end tests
 
 The Playwright journeys in `e2e/tests/` run in Chromium against the Compose stack above, which must be up:
