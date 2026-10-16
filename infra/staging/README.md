@@ -2,7 +2,7 @@
 
 `setup.sh` turns a fresh Ubuntu 24.04 server into a staging host: Docker, a pinned `cloudflared` service, a `deploy` user with key-only SSH, and the folders the stack runs from. `docker-compose.yml` is the staging stack. Nothing on the server listens to the internet; the tunnel is the only way in.
 
-All state lives outside the server (Neon, object storage, a disposable Redis), so a lost server is rebuilt, not repaired.
+All state lives outside the server (Neon, object storage, a disposable Redis), so a lost server is rebuilt, not repaired. The database is also dumped to R2 every night; restoring it is in [backups.md](backups.md).
 
 ## One-time Cloudflare setup
 

@@ -86,7 +86,7 @@ curl -s http://127.0.0.1:8000/health/ready
 3. Put the three values in `.env.monitoring` and run `setup.sh` again, then `sudo systemctl start bugsink-backup` and check `backup_success` shows up in Grafana, Explore.
 4. Only once that point shows in Explore: Grafana, Alerting, Alert rules, a rule on `absent_over_time(backup_success{target="bugsink"}[26h])` with the condition "above 0", evaluated every hour with no pending period, and "Alert state if no data" set to **Normal**. A healthy backup makes the query return nothing, so the default no-data handling would alert every day. It goes to the default contact point, `telegram-team` (see `infra/staging/README.md`). A day without a success, plus 2 hours of slack, alerts.
 
-The database backup (#75) pushes the same metric with `target="database"` and gets its own rule.
+The database backup pushes the same metric with `target="database"` and has its own rule; see `infra/staging/backups.md`.
 
 **Restore.** On the server (a fresh one after `setup.sh`, or the same one):
 

@@ -1,0 +1,59 @@
+name: Back up the database
+on:
+  schedule:
+    # After the monitoring server's 02:30 backup and the 02:00 daily-session batch, at the quietest hour.
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+    inputs:
+      restore_drill:
+        description: Then restore the newest backup into a new database, compare every table's row count and time it
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-database
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Back up ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Production joins this list when it exists, with the same secrets and variables in its own environment.
+        environment: [staging]
+    environment: ${{ matrix.environment }}
+    env:
+      BACKUP_ENV: ${{ matrix.environment }}
+      BACKUP_REMOTE: ":s3:${{ vars.R2_BACKUP_BUCKET }}"
+      RCLONE_S3_PROVIDER: Cloudflare
+      RCLONE_S3_ENDPOINT: https://${{ vars.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      RCLONE_S3_NO_CHECK_BUCKET: "true"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the pinned rclone
+        run: bash scripts/install-rclone.sh
+
+      - name: Back up
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RCLONE_S3_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          RCLONE_S3_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          PUSH_URL: ${{ vars.GRAFANA_PUSH_URL }}
+          PUSH_USER: ${{ vars.GRAFANA_PUSH_USER }}
+          PUSH_TOKEN: ${{ secrets.GRAFANA_PUSH_TOKEN }}
+        run: bash scripts/backup-database.sh
+
+      - name: Restore drill
+        if: inputs.restore_drill
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RCLONE_S3_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          RCLONE_S3_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+        run: bash scripts/restore-drill.sh

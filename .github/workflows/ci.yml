@@ -31,6 +31,7 @@ jobs:
       smoke-test: ${{ steps.filter.outputs.smoke-test }}
       staging-deploy: ${{ steps.filter.outputs.staging-deploy }}
       monitoring-backup: ${{ steps.filter.outputs.monitoring-backup }}
+      database-backup: ${{ steps.filter.outputs.database-backup }}
     steps:
       # Toolchain and CI files count too, so changing how a service is built
       # re-verifies it even when none of its source changed.
@@ -101,6 +102,13 @@ jobs:
             monitoring-backup:
               - "infra/monitoring/**"
               - "scripts/test-monitoring-backup.sh"
+              - ".github/workflows/ci.yml"
+            database-backup:
+              - "scripts/*-database*.sh"
+              - "scripts/restore-drill.sh"
+              - "scripts/install-rclone.sh"
+              - "infra/monitoring/setup.sh"
+              - ".github/workflows/backup-database.yml"
               - ".github/workflows/ci.yml"
 
   api-gateway:
@@ -222,6 +230,20 @@ jobs:
       - name: Run the backup script against stubs and a stand-in Grafana
         run: bash scripts/test-monitoring-backup.sh
 
+  # The nightly database backup and its restore run unattended, so they are tested against a real Postgres 18.
+  database-backup:
+    needs: changes
+    if: needs.changes.outputs.database-backup == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint the backup and restore scripts
+        run: shellcheck scripts/*-database*.sh scripts/restore-drill.sh scripts/install-rclone.sh
+      - name: Install the pinned rclone
+        run: bash scripts/install-rclone.sh
+      - name: Back up, restore and drill against a throwaway Postgres 18
+        run: bash scripts/test-database-backup.sh
+
   # Never path-filtered: a secret can land in any file.
   security:
     uses: ./.github/workflows/ci-security.yml
@@ -314,6 +336,7 @@ jobs:
         smoke-test,
         staging-deploy,
         monitoring-backup,
+        database-backup,
         security,
         pr-title,
         pr-ticket,
